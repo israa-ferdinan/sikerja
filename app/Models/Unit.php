@@ -1,0 +1,62 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Unit extends Model
+{
+    protected $fillable = [
+        'parent_id',
+        'name',
+        'code',
+        'description',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class, 'parent_id');
+    }
+
+    public function children(): HasMany
+    {
+        return $this->hasMany(Unit::class, 'parent_id');
+    }
+
+    public function employees(): HasMany
+    {
+        return $this->hasMany(Employee::class);
+    }
+
+    public function jobDuties(): HasMany
+    {
+        return $this->hasMany(JobDuty::class);
+    }
+
+    public function servers(): HasMany
+    {
+        return $this->hasMany(Server::class);
+    }
+
+    public function applications(): HasMany
+    {
+        return $this->hasMany(Application::class);
+    }
+
+    public function dailyReports(): HasMany
+    {
+        return $this->hasMany(DailyReport::class);
+    }
+
+    public function reportTemplates(): HasMany
+    {
+        return $this->hasMany(ReportTemplate::class);
+    }
+}
