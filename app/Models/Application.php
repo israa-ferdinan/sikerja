@@ -6,10 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
+
 class Application extends Model
 {
+    protected $table = 'applications';
     protected $fillable = [
         'unit_id',
+        'server_id',
         'name',
         'url',
         'description',
@@ -25,13 +28,13 @@ class Application extends Model
         return $this->belongsTo(Unit::class);
     }
 
-    public function dailyReports(): BelongsToMany
+    public function dailyReports()
     {
-        return $this->belongsToMany(
-            DailyReport::class,
-            'daily_report_applications',
-            'application_id',
-            'daily_report_id'
-        )->withTimestamps();
+        return $this->hasMany(DailyReport::class);
+    }
+
+    public function server()
+    {
+        return $this->belongsTo(Server::class);
     }
 }

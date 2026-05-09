@@ -11,47 +11,50 @@ return new class extends Migration
         Schema::create('daily_reports', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('employee_id')
+            $table->foreignId('user_id')
+                ->constrained('users')
+                ->cascadeOnDelete();
+
+            $table->foreignId('emloyee_id')
+                ->nullable()
                 ->constrained('employees')
-                ->cascadeOnUpdate()
-                ->restrictOnDelete();
+                ->nullOnDelete();
 
             $table->foreignId('unit_id')
+                ->nullable()
                 ->constrained('units')
-                ->cascadeOnUpdate()
-                ->restrictOnDelete();
+                ->nullOnDelete();
+
+            $table->foreignId('duty_id')
+                ->nullable()
+                ->constrained('duties')
+                ->nullOnDelete();
+
+            $table->foreignId('server_id')
+                ->nullable()
+                ->constrained('servers')
+                ->nullOnDelete();
+
+            $table->foreignId('application_id')
+                ->nullable()
+                ->constrained('applications')
+                ->nullOnDelete();
 
             $table->date('report_date');
 
             $table->string('title');
-            $table->longText('description');
-            $table->longText('result')->nullable();
+            $table->text('description');
 
-            $table->string('status')->default('submitted');
-
-            $table->foreignId('created_by')
-                ->nullable()
-                ->constrained('users')
-                ->nullOnDelete();
-
-            $table->foreignId('updated_by')
-                ->nullable()
-                ->constrained('users')
-                ->nullOnDelete();
+            $table->string('status')->default('draft');
+            $table->text('notes')->nullable();
 
             $table->timestamps();
-            $table->softDeletes();
 
-            $table->index('employee_id');
-            $table->index('unit_id');
             $table->index('report_date');
             $table->index('status');
-            $table->index('created_by');
-            $table->index('updated_by');
-
+            $table->index(['user_id', 'report_date']);
             $table->index(['unit_id', 'report_date']);
             $table->index(['employee_id', 'report_date']);
-            $table->index(['report_date', 'status']);
         });
     }
 

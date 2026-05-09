@@ -16,7 +16,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role_id',
-        'pegawai_id',
+        'employee_id',
     ];
 
     protected $hidden = [
@@ -32,11 +32,6 @@ class User extends Authenticatable
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
-    }
-
-    public function pegawai(): BelongsTo
-    {
-        return $this->belongsTo(Pegawai::class);
     }
 
     public function hasRole(string|array $roles): bool
@@ -59,5 +54,15 @@ class User extends Authenticatable
     public function isPegawai(): bool
     {
         return $this->hasRole('pegawai');
+    }
+
+    public function dailyReports()
+    {
+        return $this->hasMany(DailyReport::class);
+    }
+
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class);
     }
 }

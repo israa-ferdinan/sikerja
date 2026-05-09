@@ -15,16 +15,14 @@ return new class extends Migration
                 ->constrained('daily_reports')
                 ->cascadeOnDelete();
 
-            $table->string('file_path');
+            $table->string('photo_path');
             $table->string('original_name')->nullable();
-            $table->unsignedBigInteger('compressed_size')->nullable();
+            $table->unsignedInteger('file_size')->nullable();
             $table->string('mime_type')->nullable();
-            $table->unsignedInteger('sort_order')->default(0);
 
             $table->timestamps();
 
             $table->index('daily_report_id');
-            $table->index('sort_order');
         });
     }
 

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Models\Application;
 
 class Server extends Model
 {
@@ -28,13 +29,13 @@ class Server extends Model
         return $this->belongsTo(Unit::class);
     }
 
-    public function dailyReports(): BelongsToMany
+    public function dailyReports()
     {
-        return $this->belongsToMany(
-            DailyReport::class,
-            'daily_report_servers',
-            'server_id',
-            'daily_report_id'
-        )->withTimestamps();
+        return $this->hasMany(DailyReport::class);
+    }
+
+    public function applications()
+    {
+        return $this->hasMany(Application::class);
     }
 }

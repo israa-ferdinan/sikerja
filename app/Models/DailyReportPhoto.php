@@ -3,11 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class DailyReportPhoto extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'daily_report_id',
         'file_path',
@@ -17,13 +18,8 @@ class DailyReportPhoto extends Model
         'sort_order',
     ];
 
-    public function dailyReport(): BelongsTo
+    public function dailyReport()
     {
         return $this->belongsTo(DailyReport::class);
-    }
-
-    public function getUrlAttribute(): string
-    {
-        return Storage::url($this->file_path);
     }
 }

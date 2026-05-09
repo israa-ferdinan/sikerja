@@ -15,6 +15,7 @@ class JobDuty extends Model
         'is_active',
     ];
 
+    protected $table = 'duties';
     protected $casts = [
         'is_active' => 'boolean',
     ];

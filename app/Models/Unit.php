@@ -2,7 +2,11 @@
 
 namespace App\Models;
 
+use App\Models\Pegawai;
+use App\Models\Tupoksi;
+use App\Models\Application;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -29,17 +33,7 @@ class Unit extends Model
     {
         return $this->hasMany(Unit::class, 'parent_id');
     }
-
-    public function employees(): HasMany
-    {
-        return $this->hasMany(Employee::class);
-    }
-
-    public function jobDuties(): HasMany
-    {
-        return $this->hasMany(JobDuty::class);
-    }
-
+    
     public function servers(): HasMany
     {
         return $this->hasMany(Server::class);
@@ -58,5 +52,15 @@ class Unit extends Model
     public function reportTemplates(): HasMany
     {
         return $this->hasMany(ReportTemplate::class);
+    }
+
+    public function pegawais()
+    {
+        return $this->hasMany(Pegawai::class);
+    }
+
+    public function tupoksis()
+    {
+        return $this->hasMany(Tupoksi::class);
     }
 }

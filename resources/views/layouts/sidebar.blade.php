@@ -25,11 +25,41 @@
                     </p>
                 </div>
 
-                <x-sidebar-link href="#" :active="false">Master Unit</x-sidebar-link>
-                <x-sidebar-link href="#" :active="false">Master Pegawai</x-sidebar-link>
-                <x-sidebar-link href="#" :active="false">Master Tupoksi</x-sidebar-link>
-                <x-sidebar-link href="#" :active="false">Master Server</x-sidebar-link>
-                <x-sidebar-link href="#" :active="false">Master Aplikasi</x-sidebar-link>
+                <x-sidebar-link
+                    :href="route('admin.master-data.unit.index')"
+                    :active="request()->routeIs('admin.master-data.unit.*')">
+                    Master Unit
+                </x-sidebar-link>
+                
+                <x-sidebar-link
+                    :href="route('admin.master-data.pegawai.index')"
+                    :active="request()->routeIs('admin.master-data.pegawai.*')">
+                    Master Pegawai
+                </x-sidebar-link>
+
+                <x-sidebar-link
+                    :href="route('admin.master-data.tupoksi.index')"
+                    :active="request()->routeIs('admin.master-data.tupoksi.*')">
+                    Master Tupoksi
+                </x-sidebar-link>
+
+                <x-sidebar-link
+                    :href="route('admin.master-data.server.index')"
+                    :active="request()->routeIs('admin.master-data.server.*')">
+                    Master Server
+                </x-sidebar-link>
+
+                <x-sidebar-link
+                    :href="route('admin.master-data.aplikasi.index')"
+                    :active="request()->routeIs('admin.master-data.aplikasi.*')">
+                    Master Aplikasi
+                </x-sidebar-link>
+
+                <x-sidebar-link
+                    :href="route('admin.master-data.report-template.index')"
+                    :active="request()->routeIs('admin.master-data.report-template.*')">
+                    Template Laporan
+                </x-sidebar-link>
             @endif
 
             @if(auth()->user()->isKanit())
@@ -62,8 +92,17 @@
                     </p>
                 </div>
 
-                <x-sidebar-link href="#" :active="false">Input Laporan</x-sidebar-link>
-                <x-sidebar-link href="#" :active="false">Riwayat Laporan Saya</x-sidebar-link>
+                <x-sidebar-link
+                    :href="route('pegawai.reports.create')"
+                    :active="request()->routeIs('pegawai.reports.create')">
+                    Input Laporan
+                </x-sidebar-link>
+
+                <x-sidebar-link
+                    :href="route('pegawai.reports.index')"
+                    :active="request()->routeIs('pegawai.reports.index')">
+                    Riwayat Laporan Saya
+                </x-sidebar-link>
             @endif
         </nav>
     </div>

@@ -3,105 +3,62 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class DailyReport extends Model
 {
-    use SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'employee_id',
         'unit_id',
+        'duty_id',
+        'server_id',
+        'application_id',
         'report_date',
         'title',
         'description',
-        'result',
+        'notes',
         'status',
-        'created_by',
-        'updated_by',
     ];
 
     protected $casts = [
         'report_date' => 'date',
     ];
 
-    public function employee(): BelongsTo
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function employee()
     {
         return $this->belongsTo(Employee::class);
     }
 
-    public function unit(): BelongsTo
+    public function unit()
     {
         return $this->belongsTo(Unit::class);
     }
 
-    public function photos(): HasMany
+    public function duty()
     {
-        return $this->hasMany(DailyReportPhoto::class)
-            ->orderBy('sort_order');
+        return $this->belongsTo(Duty::class);
     }
 
-    public function jobDuties(): BelongsToMany
+    public function server()
     {
-        return $this->belongsToMany(
-            JobDuty::class,
-            'daily_report_tupoksi',
-            'daily_report_id',
-            'job_duty_id'
-        )->withTimestamps();
+        return $this->belongsTo(Server::class);
     }
 
-    public function servers(): BelongsToMany
+    public function application()
     {
-        return $this->belongsToMany(
-            Server::class,
-            'daily_report_servers',
-            'daily_report_id',
-            'server_id'
-        )->withTimestamps();
+        return $this->belongsTo(Application::class);
     }
 
-    public function applications(): BelongsToMany
+    public function photos()
     {
-        return $this->belongsToMany(
-            Application::class,
-            'daily_report_applications',
-            'daily_report_id',
-            'application_id'
-        )->withTimestamps();
-    }
-
-    public function createdBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function updatedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'updated_by');
-    }
-
-    public function scopeCurrentMonth($query)
-    {
-        return $query->whereMonth('report_date', now()->month)
-            ->whereYear('report_date', now()->year);
-    }
-
-    public function scopeForUnit($query, $unitId)
-    {
-        return $query->where('unit_id', $unitId);
-    }
-
-    public function scopeForEmployee($query, $employeeId)
-    {
-        return $query->where('employee_id', $employeeId);
-    }
-
-    public function scopeSubmitted($query)
-    {
-        return $query->where('status', 'submitted');
+        return $this->hasMany(DailyReportPhoto::class);
     }
 }

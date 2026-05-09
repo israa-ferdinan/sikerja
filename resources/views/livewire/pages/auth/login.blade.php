@@ -12,15 +12,15 @@ new #[Layout('layouts.guest')] class extends Component
     /**
      * Handle an incoming authentication request.
      */
-    public function login(): void
+    public function login()
     {
         $this->validate();
 
         $this->form->authenticate();
 
-        Session::regenerate();
+        request()->session()->regenerate();
 
-        $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
+        return redirect()->route('dashboard');
     }
 }; ?>
 
@@ -73,9 +73,20 @@ new #[Layout('layouts.guest')] class extends Component
                 </a>
             @endif
 
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
+            <button
+                type="submit"
+                wire:loading.attr="disabled"
+                wire:target="login"
+                class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                <span wire:loading.remove wire:target="login">
+                    LOG IN
+                </span>
+
+                <span wire:loading wire:target="login">
+                    LOADING...
+                </span>
+            </button>
         </div>
     </form>
 </div>

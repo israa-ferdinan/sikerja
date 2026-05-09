@@ -3,30 +3,29 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class ReportTemplate extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'unit_id',
         'job_duty_id',
         'title',
+        'category',
         'description_template',
         'result_template',
         'is_active',
     ];
 
-    protected $casts = [
-        'is_active' => 'boolean',
-    ];
-
-    public function unit(): BelongsTo
+    public function unit()
     {
         return $this->belongsTo(Unit::class);
     }
 
-    public function jobDuty(): BelongsTo
+    public function duty()
     {
-        return $this->belongsTo(JobDuty::class);
+        return $this->belongsTo(Duty::class, 'job_duty_id');
     }
 }
