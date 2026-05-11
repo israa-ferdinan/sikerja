@@ -30,11 +30,11 @@ class Employee extends Model
 
     public function user(): HasOne
     {
-        return $this->hasOne(User::class);
+        return $this->hasOne(User::class, 'employee_id');
     }
 
     public function dailyReports(): HasMany
     {
-        return $this->hasMany(DailyReport::class);
+        return $this->hasMany(DailyReport::class, 'employee_id');
     }
 }

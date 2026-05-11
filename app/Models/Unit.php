@@ -54,9 +54,9 @@ class Unit extends Model
         return $this->hasMany(ReportTemplate::class);
     }
 
-    public function pegawais()
+    public function employees()
     {
-        return $this->hasMany(Pegawai::class);
+        return $this->hasMany(Employee::class);
     }
 
     public function tupoksis()

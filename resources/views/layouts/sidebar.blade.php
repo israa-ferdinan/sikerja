@@ -62,21 +62,12 @@
                 </x-sidebar-link>
             @endif
 
-            @if(auth()->user()->isKanit())
+            @if(auth()->user()?->isKanit())
                 <x-sidebar-link
-                    :href="route('kanit.dashboard')"
-                    :active="request()->routeIs('kanit.dashboard')">
-                    Dashboard Kanit
+                        :href="route('kanit.reports.monitoring')"
+                        :active="request()->routeIs('kanit.reports.monitoring.*')">
+                        Monitoring Laporan Unit
                 </x-sidebar-link>
-
-                <div class="pt-4 pb-1">
-                    <p class="px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                        Laporan
-                    </p>
-                </div>
-
-                <x-sidebar-link href="#" :active="false">Laporan Unit</x-sidebar-link>
-                <x-sidebar-link href="#" :active="false">Rekap Bulanan</x-sidebar-link>
             @endif
 
             @if(auth()->user()->isPegawai())
