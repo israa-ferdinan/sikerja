@@ -14,6 +14,7 @@ use App\Livewire\Admin\MasterData\ReportTemplate\Index as ReportTemplateIndex;
 
 use App\Livewire\Kanit\Dashboard as KanitDashboard;
 use App\Livewire\Kanit\ReportMonitoring;
+use App\Livewire\Kanit\ReportDetail;
 
 use App\Livewire\Pegawai\Dashboard as PegawaiDashboard;
 
@@ -68,9 +69,15 @@ Route::middleware(['role:admin'])
             ->name('master-data.report-template.index');            
     }); 
 
-Route::middleware(['role:kanit'])->prefix('kanit')->name('kanit.')->group(function () {
-        Route::get('/dashboard', KanitDashboard::class)->name('dashboard');
-        Route::get('/monitoring-laporan', ReportMonitoring::class)->name('reports.monitoring');
+Route::middleware(['auth', 'kanit'])->prefix('kanit')->name('kanit.')->group(function () {
+    Route::get('/dashboard', KanitDashboard::class)
+            ->name('dashboard');
+
+    Route::get('/monitoring-laporan', ReportMonitoring::class)
+        ->name('reports.monitoring');
+
+    Route::get('/monitoring-laporan/{report}', ReportDetail::class)
+        ->name('reports.detail');
     });
 
 Route::middleware(['role:pegawai'])

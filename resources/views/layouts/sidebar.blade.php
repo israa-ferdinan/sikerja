@@ -64,6 +64,12 @@
 
             @if(auth()->user()?->isKanit())
                 <x-sidebar-link
+                    :href="route('kanit.dashboard')"
+                    :active="request()->routeIs('kanit.dashboard')">
+                    Dashboard Kanit
+                </x-sidebar-link>
+            
+                <x-sidebar-link
                         :href="route('kanit.reports.monitoring')"
                         :active="request()->routeIs('kanit.reports.monitoring.*')">
                         Monitoring Laporan Unit
