@@ -41,7 +41,7 @@ Route::middleware(['auth'])->group(function () {
         };
     })->name('dashboard');
 
-    Route::get('/reports/create', CreateDailyReport::class)->name('reports.create');
+    //Route::get('/reports/create', CreateDailyReport::class)->name('reports.create');
 
 Route::middleware(['role:admin'])
     ->prefix('admin')

@@ -3,7 +3,6 @@
 namespace App\Livewire\Reports;
 
 use App\Models\DailyReport;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 
@@ -13,8 +12,10 @@ class ShowDailyReport extends Component
 
     public function mount(DailyReport $report)
     {
-        if ($report->user_id !== Auth::id()) {
-            abort(403);
+        $user = auth()->user();
+
+        if (! $user->employee_id || $report->employee_id !== $user->employee_id) {
+            abort(403, 'Anda tidak memiliki akses ke laporan ini.');
         }
 
         $this->report = $report->load([
@@ -29,8 +30,10 @@ class ShowDailyReport extends Component
 
     public function delete()
     {
-        if ($this->report->user_id !== Auth::id()) {
-            abort(403);
+        $user = auth()->user();
+
+        if (! $user->employee_id || $this->report->employee_id !== $user->employee_id) {
+            abort(403, 'Anda tidak memiliki akses untuk menghapus laporan ini.');
         }
 
         foreach ($this->report->photos as $photo) {

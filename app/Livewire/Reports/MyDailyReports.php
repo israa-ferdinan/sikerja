@@ -3,7 +3,7 @@
 namespace App\Livewire\Reports;
 
 use App\Models\DailyReport;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -47,9 +47,42 @@ class MyDailyReports extends Component
         $this->resetPage();
     }
 
+    public function delete($id)
+    {
+        $user = auth()->user();
+
+        if (! $user->employee_id) {
+            abort(403, 'Akun belum terhubung dengan data pegawai.');
+        }
+
+        $report = DailyReport::query()
+            ->with('photos')
+            ->where('employee_id', $user->employee_id)
+            ->findOrFail($id);
+
+        foreach ($report->photos as $photo) {
+            if ($photo->file_path && Storage::disk('public')->exists($photo->file_path)) {
+                Storage::disk('public')->delete($photo->file_path);
+            }
+
+            $photo->delete();
+        }
+
+        $report->delete();
+
+        session()->flash('success', 'Laporan berhasil dihapus.');
+    }
+    
     public function render()
     {
-        $user = Auth::user();
+        $user = auth()->user();
+
+        if (! $user->employee_id) {
+            return view('livewire.reports.my-daily-reports', [
+                'reports' => DailyReport::query()->whereRaw('1 = 0')->paginate(10),
+                'missingEmployee' => true,
+            ])->layout('layouts.app');
+        }
 
         $reports = DailyReport::query()
             ->with([
@@ -58,7 +91,7 @@ class MyDailyReports extends Component
                 'application',
                 'photos',
             ])
-            ->where('user_id', $user->id)
+            ->where('employee_id', $user->employee_id)
             ->whereMonth('report_date', $this->month)
             ->whereYear('report_date', $this->year)
             ->when($this->search, function ($query) {

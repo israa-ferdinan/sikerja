@@ -7,7 +7,6 @@ use App\Models\DailyReport;
 use App\Models\DailyReportPhoto;
 use App\Models\Duty;
 use App\Models\Server;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
@@ -38,8 +37,10 @@ class EditDailyReport extends Component
 
     public function mount(DailyReport $report)
     {
-        if ($report->user_id !== Auth::id()) {
-            abort(403);
+        $user = auth()->user();
+
+        if (! $user->employee_id || $report->employee_id !== $user->employee_id) {
+            abort(403, 'Anda tidak memiliki akses untuk mengubah laporan ini.');
         }
 
         $this->report = $report->load('photos');
@@ -71,14 +72,40 @@ class EditDailyReport extends Component
 
     public function updatedNewPhotos()
     {
+        $this->validate([
+            'newPhotos' => ['nullable', 'array'],
+            'newPhotos.*' => ['image', 'max:5120'],
+        ], [
+            'newPhotos.*.image' => 'File harus berupa gambar.',
+            'newPhotos.*.max' => 'Ukuran foto maksimal 5 MB per file.',
+        ]);
+
         $existingCount = $this->report->photos()->count();
 
         foreach ($this->newPhotos as $photo) {
             if (($existingCount + count($this->photos)) >= 5) {
+                $this->addError('photos', 'Total foto maksimal 5.');
                 break;
             }
 
             $this->photos[] = $photo;
+        }
+
+        if ($this->application_id && ! $this->server_id) {
+            $this->addError('server_id', 'Pilih server terlebih dahulu sebelum memilih aplikasi.');
+            return;
+        }
+
+        if ($this->application_id && $this->server_id) {
+            $applicationBelongsToServer = Application::query()
+                ->where('id', $this->application_id)
+                ->where('server_id', $this->server_id)
+                ->exists();
+
+            if (! $applicationBelongsToServer) {
+                $this->addError('application_id', 'Aplikasi tidak sesuai dengan server yang dipilih.');
+                return;
+            }
         }
 
         $this->newPhotos = [];
@@ -93,6 +120,12 @@ class EditDailyReport extends Component
 
     public function removeExistingPhoto($photoId)
     {
+        $user = auth()->user();
+
+        if (! $user->employee_id || $this->report->employee_id !== $user->employee_id) {
+            abort(403, 'Anda tidak memiliki akses untuk menghapus foto laporan ini.');
+        }
+
         $photo = DailyReportPhoto::where('daily_report_id', $this->report->id)
             ->where('id', $photoId)
             ->firstOrFail();
@@ -131,8 +164,10 @@ class EditDailyReport extends Component
             'photos.*.max' => 'Ukuran foto maksimal 5 MB per file.',
         ]);
 
-        if ($this->report->user_id !== Auth::id()) {
-            abort(403);
+        $user = auth()->user();
+
+        if (! $user->employee_id || $this->report->employee_id !== $user->employee_id) {
+            abort(403, 'Anda tidak memiliki akses untuk mengubah laporan ini.');
         }
 
         $this->report->update([

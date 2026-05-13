@@ -1,6 +1,14 @@
 <div class="relative z-10 p-4 sm:p-6">
+    @if ($missingEmployee)
+        <div class="rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+            Akun Anda belum terhubung dengan data pegawai. Silakan hubungi admin.
+        </div>
+    @elseif ($missingUnit)
+        <div class="rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+            Data pegawai Anda belum memiliki unit kerja. Silakan hubungi admin.
+        </div>
+    @else
     <div class="relative z-10 mx-auto max-w-5xl space-y-6">
-
         <x-ui.page-header
             title="Input Laporan Kerja Harian"
             subtitle="Isi laporan pekerjaan harian berdasarkan kegiatan, tupoksi, server, atau aplikasi yang dikerjakan."
@@ -45,9 +53,9 @@
                     <div class="grid gap-4 md:grid-cols-12 md:items-center">
                         <div class="md:col-span-8">
                             <select
-                                wire:model.live="template_id"
-                                class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                            >
+                                    wire:model.change="form.template_id"
+                                    class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                                >
                                 <option value="">-- Pilih Template Laporan --</option>
 
                                 @foreach ($templates as $template)
@@ -106,11 +114,11 @@
 
                         <input
                             type="date"
-                            wire:model="report_date"
+                            wire:model.change="form.report_date"
                             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                         >
 
-                        @error('report_date')
+                        @error('form.report_date')
                             <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
@@ -121,7 +129,7 @@
                         </label>
 
                         <select
-                            wire:model="duty_id"
+                            wire:model.change="form.duty_id"
                             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                         >
                             <option value="">-- Pilih Tupoksi --</option>
@@ -133,7 +141,7 @@
                             @endforeach
                         </select>
 
-                        @error('duty_id')
+                        @error('form.duty_id')
                             <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
@@ -144,7 +152,7 @@
                         </label>
 
                         <select
-                            wire:model.live="server_id"
+                            wire:model.change="form.server_id"
                             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                         >
                             <option value="">-- Pilih Server --</option>
@@ -156,7 +164,7 @@
                             @endforeach
                         </select>
 
-                        @error('server_id')
+                        @error('form.server_id')
                             <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
@@ -167,12 +175,12 @@
                         </label>
 
                         <select
-                            wire:model="application_id"
+                            wire:model.change="form.application_id"
                             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-slate-100 disabled:text-slate-500"
-                            @if (!$server_id) disabled @endif
+                            @disabled(empty($form['server_id']))
                         >
                             <option value="">
-                                {{ $server_id ? '-- Pilih Aplikasi --' : 'Pilih server terlebih dahulu' }}
+                                {{ !empty($form['server_id']) ? '-- Pilih Aplikasi --' : 'Pilih server terlebih dahulu' }}
                             </option>
 
                             @foreach ($applications as $application)
@@ -182,7 +190,7 @@
                             @endforeach
                         </select>
 
-                        @error('application_id')
+                        @error('form.application_id')
                             <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
@@ -208,12 +216,12 @@
 
                         <input
                             type="text"
-                            wire:model="title"
+                            wire:model.blur="form.title"
                             placeholder="Contoh: Pengecekan server aplikasi SIAKAD"
                             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                         >
 
-                        @error('title')
+                        @error('form.title')
                             <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
@@ -224,13 +232,13 @@
                         </label>
 
                         <textarea
-                            wire:model="description"
+                            wire:model.blur="form.description"
                             rows="5"
                             placeholder="Tuliskan detail pekerjaan yang dilakukan hari ini..."
                             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm leading-6 text-slate-700 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                         ></textarea>
 
-                        @error('description')
+                        @error('form.description')
                             <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
@@ -241,13 +249,13 @@
                         </label>
 
                         <textarea
-                            wire:model="notes"
+                            wire:model.blur="form.notes"
                             rows="3"
                             placeholder="Opsional. Contoh: kendala, tindak lanjut, atau informasi tambahan."
                             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm leading-6 text-slate-700 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                         ></textarea>
 
-                        @error('notes')
+                        @error('form.notes')
                             <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
@@ -389,4 +397,5 @@
 
         </form>
     </div>
+    @endif
 </div>

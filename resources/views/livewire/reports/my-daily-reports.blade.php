@@ -5,8 +5,9 @@
         subtitle="Daftar laporan kerja harian yang sudah Anda buat."
     >
         <x-slot:action>
+            @if (empty($missingEmployee))
             <a
-                href="{{ route('reports.create') }}"
+                href="{{ route('pegawai.reports.create') }}"
                 class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -14,8 +15,15 @@
                 </svg>
                 Buat Laporan
             </a>
+            @endif
         </x-slot:action>
     </x-ui.page-header>
+
+    @if (!empty($missingEmployee))
+        <div class="mb-4 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+            Akun Anda belum terhubung dengan data pegawai. Silakan hubungi admin untuk melengkapi data pegawai terlebih dahulu.
+        </div>
+    @endif
 
     {{-- Filter --}}
     <x-ui.card padding="p-4">
@@ -254,7 +262,7 @@
             >
                 <x-slot:action>
                     <a
-                        href="{{ route('reports.create') }}"
+                        href="{{ route('pegawai.reports.create') }}"
                         class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
                     >
                         Buat Laporan Pertama

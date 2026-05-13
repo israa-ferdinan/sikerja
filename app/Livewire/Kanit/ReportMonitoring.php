@@ -107,17 +107,13 @@ class ReportMonitoring extends Component
             ->count();
 
         $totalReports = DailyReport::query()
-            ->whereHas('employee', function ($query) use ($unitId) {
-                $query->where('unit_id', $unitId);
-            })
+            ->where('unit_id', $unitId)
             ->whereMonth('report_date', (int) $this->month)
             ->whereYear('report_date', (int) $this->year)
             ->count();
 
         $submittedEmployeeIds = DailyReport::query()
-            ->whereHas('employee', function ($query) use ($unitId) {
-                $query->where('unit_id', $unitId);
-            })
+            ->where('unit_id', $unitId)
             ->whereMonth('report_date', (int) $this->month)
             ->whereYear('report_date', (int) $this->year)
             ->distinct()
@@ -160,13 +156,20 @@ class ReportMonitoring extends Component
                 'application',
                 'photos',
             ])
-            ->whereHas('employee', function ($query) use ($unitId) {
-                $query->where('unit_id', $unitId);
-            })
+            ->where('unit_id', $unitId)
             ->whereMonth('report_date', (int) $this->month)
             ->whereYear('report_date', (int) $this->year)
-            ->when($this->employeeId, function ($query) {
-                $query->where('employee_id', $this->employeeId);
+            ->when($this->employeeId, function ($query) use ($unitId) {
+                $employeeId = Employee::query()
+                    ->where('unit_id', $unitId)
+                    ->where('id', $this->employeeId)
+                    ->value('id');
+
+                if ($employeeId) {
+                    $query->where('employee_id', $employeeId);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
             })
             ->when($this->dutyId, function ($query) {
                 $query->where('duty_id', $this->dutyId);
@@ -175,7 +178,13 @@ class ReportMonitoring extends Component
                 $query->where('server_id', $this->serverId);
             })
             ->when($this->applicationId, function ($query) {
-                $query->where('application_id', $this->applicationId);
+                $query->whereHas('application', function ($applicationQuery) {
+                    $applicationQuery->where('id', $this->applicationId);
+
+                    if ($this->serverId) {
+                        $applicationQuery->where('server_id', $this->serverId);
+                    }
+                });
             })
             ->when($this->search, function ($query) {
                 $keyword = '%' . trim($this->search) . '%';

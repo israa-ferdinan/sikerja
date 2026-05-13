@@ -27,7 +27,7 @@ class ReportDetail extends Component
         ]);
 
         abort_if(
-            !$report->employee || (int) $report->employee->unit_id !== (int) $unitId,
+            (int) $report->unit_id !== (int) $unitId,
             403,
             'Anda tidak memiliki akses ke laporan ini.'
         );
