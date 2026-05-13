@@ -9,6 +9,8 @@ use App\Models\Duty;
 use App\Models\Server;
 use App\Models\ReportTemplate;
 
+use Carbon\Carbon;
+
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
@@ -182,35 +184,64 @@ class CreateDailyReport extends Component
         $this->photos = array_values($this->photos);
     }
 
-    public function updatedTemplateId()
+    public function updatedTemplateId($value): void
     {
-        if (!$this->template_id) {
+        if (empty($value)) {
             return;
         }
 
-        $template = ReportTemplate::find($this->template_id);
+        $template = ReportTemplate::find($value);
 
         if (!$template) {
             return;
         }
 
-        $this->title = $template->title;
+        $replacements = $this->getTemplateReplacements();
 
-        $descriptionParts = [];
+        if (!empty($template->title)) {
+            $this->title = $this->replaceTemplatePlaceholders($template->title, $replacements);
+        }
 
         if (!empty($template->description_template)) {
-            $descriptionParts[] = $template->description_template;
+            $this->description = $this->replaceTemplatePlaceholders($template->description_template, $replacements);
         }
 
         if (!empty($template->result_template)) {
-            $descriptionParts[] = "Hasil:\n" . $template->result_template;
+            $this->notes = $this->replaceTemplatePlaceholders($template->result_template, $replacements);
+        }
+    }
+
+    private function replaceTemplatePlaceholders(?string $text, array $replacements): string
+    {
+        if (empty($text)) {
+            return '';
         }
 
-        $this->description = implode("\n\n", $descriptionParts);
+        return strtr($text, $replacements);
+    }
 
-        if (!empty($template->job_duty_id)) {
-            $this->duty_id = $template->job_duty_id;
-        }
+    private function getTemplateReplacements(): array
+    {
+        $application = $this->application_id
+            ? Application::find($this->application_id)
+            : null;
+
+        $server = $this->server_id
+            ? Server::find($this->server_id)
+            : null;
+
+        $duty = $this->duty_id
+            ? Duty::find($this->duty_id)
+            : null;
+
+        return [
+            '{{application_name}}' => $application?->name ?? '-',
+            '{{server_name}}' => $server?->name ?? '-',
+            '{{duty_name}}' => $duty?->name ?? '-',
+            '{{report_date}}' => $this->report_date
+                ? Carbon::parse($this->report_date)->translatedFormat('d F Y')
+                : '-',
+        ];
     }
 
     public function cloneLastReport()

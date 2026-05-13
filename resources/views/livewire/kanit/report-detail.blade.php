@@ -1,187 +1,277 @@
 <div class="space-y-6">
     {{-- Header --}}
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">
-                Detail Laporan Pegawai
-            </h1>
-            <p class="mt-1 text-sm text-gray-500">
-                Detail laporan kerja harian pegawai dalam unit Anda.
-            </p>
-        </div>
+    <x-ui.page-header
+        title="Detail Laporan Pegawai"
+        subtitle="Detail laporan kerja harian pegawai dalam unit Anda."
+    >
+        <x-slot:action>
+            <a
+                href="{{ route('kanit.reports.monitoring') }}"
+                class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100"
+            >
+                ← Kembali
+            </a>
+        </x-slot:action>
+    </x-ui.page-header>
 
-        <a href="{{ route('kanit.reports.monitoring') }}"
-           class="inline-flex items-center justify-center rounded-xl bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200">
-            ← Kembali
-        </a>
-    </div>
+    {{-- Summary Header --}}
+    <x-ui.card>
+        <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                    <x-ui.badge variant="primary">
+                        Laporan Pegawai
+                    </x-ui.badge>
 
-    {{-- Info Utama --}}
-    <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div class="xl:col-span-2 space-y-6">
-            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                        <h2 class="text-xl font-bold text-gray-900">
-                            {{ $report->title }}
-                        </h2>
-
-                        <p class="mt-2 text-sm text-gray-500">
-                            Dibuat pada {{ optional($report->report_date)->format('d/m/Y') }}
-                        </p>
-                    </div>
-
-                    <span class="inline-flex w-fit items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                    <x-ui.badge variant="neutral">
                         {{ ucfirst($report->status ?? 'draft') }}
-                    </span>
+                    </x-ui.badge>
                 </div>
 
-                <div class="mt-6 space-y-5">
+                <h2 class="mt-3 text-xl font-bold leading-tight text-slate-900 sm:text-2xl">
+                    {{ $report->title }}
+                </h2>
+
+                <p class="mt-2 text-sm leading-6 text-slate-500">
+                    Dibuat oleh
+                    <span class="font-semibold text-slate-700">
+                        {{ $report->employee->name ?? '-' }}
+                    </span>
+                    pada
+                    <span class="font-semibold text-slate-700">
+                        {{ optional($report->report_date)->format('d/m/Y') }}
+                    </span>
+                </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 sm:min-w-[300px]">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-xs font-bold uppercase tracking-wide text-slate-500">
+                        Foto
+                    </p>
+                    <p class="mt-2 text-2xl font-bold text-slate-900">
+                        {{ $report->photos->count() }}
+                    </p>
+                </div>
+
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-xs font-bold uppercase tracking-wide text-slate-500">
+                        Tanggal
+                    </p>
+                    <p class="mt-2 text-sm font-bold text-slate-900">
+                        {{ optional($report->report_date)->format('d/m/Y') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </x-ui.card>
+
+    {{-- Content --}}
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        {{-- Main Content --}}
+        <div class="space-y-6 xl:col-span-2">
+            {{-- Detail Pekerjaan --}}
+            <x-ui.card>
+                <div class="mb-5">
+                    <h2 class="text-base font-bold text-slate-900">
+                        Detail Pekerjaan
+                    </h2>
+                    <p class="mt-1 text-sm text-slate-500">
+                        Uraian kegiatan yang dilaporkan oleh pegawai.
+                    </p>
+                </div>
+
+                <div class="space-y-5">
                     <div>
-                        <h3 class="text-sm font-semibold text-gray-900">
+                        <h3 class="mb-2 text-sm font-bold text-slate-800">
                             Deskripsi Pekerjaan
                         </h3>
-                        <div class="mt-2 rounded-xl bg-gray-50 p-4 text-sm leading-6 text-gray-700">
+
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-700">
                             {!! nl2br(e($report->description ?? '-')) !!}
                         </div>
                     </div>
 
                     <div>
-                        <h3 class="text-sm font-semibold text-gray-900">
+                        <h3 class="mb-2 text-sm font-bold text-slate-800">
                             Hasil / Keterangan
                         </h3>
-                        <div class="mt-2 rounded-xl bg-gray-50 p-4 text-sm leading-6 text-gray-700">
-                            {!! nl2br(e($report->result ?? '-')) !!}
+
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-700">
+                            {!! nl2br(e($report->result ?? $report->notes ?? '-')) !!}
                         </div>
                     </div>
                 </div>
-            </div>
+            </x-ui.card>
 
             {{-- Foto --}}
-            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                <div class="mb-4 flex items-center justify-between">
+            <x-ui.card>
+                <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                        <h2 class="text-base font-semibold text-gray-900">
-                            Foto Laporan
+                        <h2 class="text-base font-bold text-slate-900">
+                            Foto Dokumentasi
                         </h2>
-                        <p class="mt-1 text-sm text-gray-500">
-                            Dokumentasi foto yang diunggah pegawai.
+                        <p class="mt-1 text-sm text-slate-500">
+                            Dokumentasi foto yang diunggah pegawai pada laporan ini.
                         </p>
                     </div>
 
-                    <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                    <x-ui.badge variant="{{ $report->photos->count() > 0 ? 'success' : 'neutral' }}">
                         {{ $report->photos->count() }} foto
-                    </span>
+                    </x-ui.badge>
                 </div>
 
                 @if($report->photos->count())
-                    <div class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-                        @foreach($report->photos as $photo)
-                            <a href="{{ Storage::url($photo->file_path) }}"
-                               target="_blank"
-                               class="group overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
-                                <img src="{{ Storage::url($photo->file_path) }}"
-                                     alt="Foto laporan"
-                                     class="h-36 w-full object-cover transition duration-200 group-hover:scale-105">
+                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                        @foreach($report->photos as $index => $photo)
+                            <a
+                                href="{{ Storage::url($photo->file_path) }}"
+                                target="_blank"
+                                class="group relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm"
+                            >
+                                <img
+                                    src="{{ Storage::url($photo->file_path) }}"
+                                    alt="Foto laporan {{ $index + 1 }}"
+                                    class="h-36 w-full object-cover transition duration-200 group-hover:scale-105"
+                                >
+
+                                <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-900/80 to-transparent px-3 pb-2 pt-8">
+                                    <span class="text-xs font-semibold text-white">
+                                        Foto {{ $index + 1 }}
+                                    </span>
+                                </div>
+
+                                <div class="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-1 text-[11px] font-bold text-slate-700 opacity-0 shadow-sm transition group-hover:opacity-100">
+                                    Lihat
+                                </div>
                             </a>
                         @endforeach
                     </div>
                 @else
-                    <div class="rounded-xl bg-gray-50 p-6 text-center text-sm text-gray-500">
-                        Tidak ada foto pada laporan ini.
-                    </div>
+                    <x-ui.empty-state
+                        icon="📷"
+                        title="Tidak ada foto"
+                        message="Pegawai belum mengunggah foto dokumentasi untuk laporan ini."
+                    />
                 @endif
-            </div>
+            </x-ui.card>
         </div>
 
-        {{-- Sidebar Info --}}
+        {{-- Sidebar --}}
         <div class="space-y-6">
-            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h2 class="text-base font-semibold text-gray-900">
-                    Informasi Pegawai
-                </h2>
+            {{-- Informasi Pegawai --}}
+            <x-ui.card>
+                <div class="mb-5">
+                    <h2 class="text-base font-bold text-slate-900">
+                        Informasi Pegawai
+                    </h2>
+                    <p class="mt-1 text-sm text-slate-500">
+                        Identitas pegawai pembuat laporan.
+                    </p>
+                </div>
 
-                <div class="mt-4 space-y-4 text-sm">
+                <div class="space-y-4">
                     <div>
-                        <div class="text-xs font-medium uppercase tracking-wide text-gray-400">
+                        <div class="text-xs font-bold uppercase tracking-wide text-slate-400">
                             Nama Pegawai
                         </div>
-                        <div class="mt-1 font-semibold text-gray-900">
+                        <div class="mt-1 text-sm font-semibold text-slate-900">
                             {{ $report->employee->name ?? '-' }}
                         </div>
                     </div>
 
                     <div>
-                        <div class="text-xs font-medium uppercase tracking-wide text-gray-400">
+                        <div class="text-xs font-bold uppercase tracking-wide text-slate-400">
                             Jabatan
                         </div>
-                        <div class="mt-1 text-gray-700">
+                        <div class="mt-1 text-sm text-slate-700">
                             {{ $report->employee->position ?? '-' }}
                         </div>
                     </div>
 
                     <div>
-                        <div class="text-xs font-medium uppercase tracking-wide text-gray-400">
+                        <div class="text-xs font-bold uppercase tracking-wide text-slate-400">
                             Unit
                         </div>
-                        <div class="mt-1 text-gray-700">
+                        <div class="mt-1 text-sm text-slate-700">
                             {{ $report->employee->unit->name ?? '-' }}
                         </div>
                     </div>
                 </div>
-            </div>
+            </x-ui.card>
 
-            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h2 class="text-base font-semibold text-gray-900">
-                    Informasi Laporan
-                </h2>
+            {{-- Informasi Laporan --}}
+            <x-ui.card>
+                <div class="mb-5">
+                    <h2 class="text-base font-bold text-slate-900">
+                        Informasi Laporan
+                    </h2>
+                    <p class="mt-1 text-sm text-slate-500">
+                        Metadata laporan kerja harian.
+                    </p>
+                </div>
 
-                <div class="mt-4 space-y-4 text-sm">
+                <div class="space-y-4">
                     <div>
-                        <div class="text-xs font-medium uppercase tracking-wide text-gray-400">
+                        <div class="text-xs font-bold uppercase tracking-wide text-slate-400">
                             Tanggal Laporan
                         </div>
-                        <div class="mt-1 font-semibold text-gray-900">
+                        <div class="mt-1 text-sm font-semibold text-slate-900">
                             {{ optional($report->report_date)->format('d/m/Y') }}
                         </div>
                     </div>
 
                     <div>
-                        <div class="text-xs font-medium uppercase tracking-wide text-gray-400">
+                        <div class="text-xs font-bold uppercase tracking-wide text-slate-400">
                             Tupoksi
                         </div>
-                        <div class="mt-1 text-gray-700">
-                            {{ $report->duty->name ?? '-' }}
+                        <div class="mt-1">
+                            @if($report->duty)
+                                <x-ui.badge variant="primary">
+                                    {{ $report->duty->name }}
+                                </x-ui.badge>
+                            @else
+                                <span class="text-sm text-slate-500">-</span>
+                            @endif
                         </div>
                     </div>
 
                     <div>
-                        <div class="text-xs font-medium uppercase tracking-wide text-gray-400">
+                        <div class="text-xs font-bold uppercase tracking-wide text-slate-400">
                             Server
                         </div>
-                        <div class="mt-1 text-gray-700">
+                        <div class="mt-1 text-sm text-slate-700">
                             {{ $report->server->name ?? '-' }}
                         </div>
                     </div>
 
                     <div>
-                        <div class="text-xs font-medium uppercase tracking-wide text-gray-400">
+                        <div class="text-xs font-bold uppercase tracking-wide text-slate-400">
                             Aplikasi
                         </div>
-                        <div class="mt-1 text-gray-700">
+                        <div class="mt-1 text-sm text-slate-700">
                             {{ $report->application->name ?? '-' }}
                         </div>
                     </div>
                 </div>
-            </div>
+            </x-ui.card>
 
-            <div class="rounded-2xl border border-blue-100 bg-blue-50 p-5">
-                <h3 class="text-sm font-semibold text-blue-900">
-                    Akses Kanit
-                </h3>
-                <p class="mt-2 text-sm leading-6 text-blue-700">
-                    Halaman ini hanya menampilkan detail laporan pegawai yang berada dalam unit Kanit yang sedang login.
-                </p>
+            {{-- Info Akses --}}
+            <div class="rounded-2xl border border-blue-200 bg-blue-50 p-5 shadow-sm">
+                <div class="flex gap-3">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-blue-700 shadow-sm">
+                        ℹ️
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-bold text-blue-900">
+                            Akses Kanit
+                        </h3>
+                        <p class="mt-1 text-sm leading-6 text-blue-700">
+                            Halaman ini hanya menampilkan detail laporan pegawai yang berada dalam unit Kanit yang sedang login.
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

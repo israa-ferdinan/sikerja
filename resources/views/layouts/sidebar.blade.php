@@ -15,7 +15,8 @@
             @if(auth()->user()->isAdmin())
                 <x-sidebar-link
                     :href="route('admin.dashboard')"
-                    :active="request()->routeIs('admin.dashboard')">
+                    :active="request()->routeIs('admin.dashboard')"
+                >
                     Dashboard Admin
                 </x-sidebar-link>
 
@@ -27,37 +28,43 @@
 
                 <x-sidebar-link
                     :href="route('admin.master-data.unit.index')"
-                    :active="request()->routeIs('admin.master-data.unit.*')">
+                    :active="request()->routeIs('admin.master-data.unit.*')"
+                >
                     Master Unit
                 </x-sidebar-link>
-                
+
                 <x-sidebar-link
                     :href="route('admin.master-data.pegawai.index')"
-                    :active="request()->routeIs('admin.master-data.pegawai.*')">
+                    :active="request()->routeIs('admin.master-data.pegawai.*')"
+                >
                     Master Pegawai
                 </x-sidebar-link>
 
                 <x-sidebar-link
                     :href="route('admin.master-data.tupoksi.index')"
-                    :active="request()->routeIs('admin.master-data.tupoksi.*')">
+                    :active="request()->routeIs('admin.master-data.tupoksi.*')"
+                >
                     Master Tupoksi
                 </x-sidebar-link>
 
                 <x-sidebar-link
                     :href="route('admin.master-data.server.index')"
-                    :active="request()->routeIs('admin.master-data.server.*')">
+                    :active="request()->routeIs('admin.master-data.server.*')"
+                >
                     Master Server
                 </x-sidebar-link>
 
                 <x-sidebar-link
                     :href="route('admin.master-data.aplikasi.index')"
-                    :active="request()->routeIs('admin.master-data.aplikasi.*')">
+                    :active="request()->routeIs('admin.master-data.aplikasi.*')"
+                >
                     Master Aplikasi
                 </x-sidebar-link>
 
                 <x-sidebar-link
                     :href="route('admin.master-data.report-template.index')"
-                    :active="request()->routeIs('admin.master-data.report-template.*')">
+                    :active="request()->routeIs('admin.master-data.report-template.*')"
+                >
                     Template Laporan
                 </x-sidebar-link>
             @endif
@@ -65,21 +72,30 @@
             @if(auth()->user()?->isKanit())
                 <x-sidebar-link
                     :href="route('kanit.dashboard')"
-                    :active="request()->routeIs('kanit.dashboard')">
+                    :active="request()->routeIs('kanit.dashboard')"
+                >
                     Dashboard Kanit
                 </x-sidebar-link>
-            
+
+                <div class="pt-4 pb-1">
+                    <p class="px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                        Laporan Unit
+                    </p>
+                </div>
+
                 <x-sidebar-link
-                        :href="route('kanit.reports.monitoring')"
-                        :active="request()->routeIs('kanit.reports.monitoring.*')">
-                        Monitoring Laporan Unit
+                    :href="route('kanit.reports.monitoring')"
+                    :active="request()->routeIs('kanit.reports.*')"
+                >
+                    Monitoring Laporan Unit
                 </x-sidebar-link>
             @endif
 
             @if(auth()->user()->isPegawai())
                 <x-sidebar-link
                     :href="route('pegawai.dashboard')"
-                    :active="request()->routeIs('pegawai.dashboard')">
+                    :active="request()->routeIs('pegawai.dashboard')"
+                >
                     Dashboard Pegawai
                 </x-sidebar-link>
 
@@ -91,13 +107,15 @@
 
                 <x-sidebar-link
                     :href="route('pegawai.reports.create')"
-                    :active="request()->routeIs('pegawai.reports.create')">
+                    :active="request()->routeIs('pegawai.reports.create')"
+                >
                     Input Laporan
                 </x-sidebar-link>
 
                 <x-sidebar-link
                     :href="route('pegawai.reports.index')"
-                    :active="request()->routeIs('pegawai.reports.index')">
+                    :active="request()->routeIs('pegawai.reports.index')"
+                >
                     Riwayat Laporan Saya
                 </x-sidebar-link>
             @endif

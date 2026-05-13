@@ -24,7 +24,7 @@ class ReportTemplate extends Model
         return $this->belongsTo(Unit::class);
     }
 
-    public function duty()
+    public function jobDuty()
     {
         return $this->belongsTo(Duty::class, 'job_duty_id');
     }

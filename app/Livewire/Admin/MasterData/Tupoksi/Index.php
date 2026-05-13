@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Admin\MasterData\Tupoksi;
 
-use App\Models\Tupoksi;
+use App\Models\JobDuty;
 use App\Models\Unit;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -46,7 +46,7 @@ class Index extends Component
 
     public function openEditModal($id)
     {
-        $tupoksi = Tupoksi::findOrFail($id);
+        $tupoksi = JobDuty::findOrFail($id);
 
         $this->tupoksiId = $tupoksi->id;
         $this->unit_id = $tupoksi->unit_id;
@@ -62,7 +62,7 @@ class Index extends Component
     {
         $this->validate();
 
-        Tupoksi::updateOrCreate(
+        JobDuty::updateOrCreate(
             ['id' => $this->tupoksiId],
             [
                 'unit_id' => $this->unit_id,
@@ -72,14 +72,17 @@ class Index extends Component
             ]
         );
 
-        session()->flash('success', $this->isEdit ? 'Tupoksi berhasil diperbarui.' : 'Tupoksi berhasil ditambahkan.');
+        session()->flash(
+            'success',
+            $this->isEdit ? 'Tupoksi berhasil diperbarui.' : 'Tupoksi berhasil ditambahkan.'
+        );
 
         $this->closeModal();
     }
 
     public function delete($id)
     {
-        Tupoksi::findOrFail($id)->delete();
+        JobDuty::findOrFail($id)->delete();
 
         session()->flash('success', 'Tupoksi berhasil dihapus.');
     }
@@ -106,7 +109,7 @@ class Index extends Component
 
     public function render()
     {
-        $tupoksis = Tupoksi::query()
+        $tupoksis = JobDuty::query()
             ->with('unit')
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {

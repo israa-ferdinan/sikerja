@@ -1,44 +1,56 @@
 <div class="space-y-6">
     {{-- Header --}}
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">
-                Monitoring Laporan Unit
-            </h1>
-            <p class="mt-1 text-sm text-gray-500">
-                Pantau laporan kerja harian pegawai dalam unit Anda.
-            </p>
-        </div>
+    <x-ui.page-header
+        title="Monitoring Laporan Unit"
+        subtitle="Pantau laporan kerja harian pegawai dalam unit Anda."
+    >
+        <x-slot:action>
+            <button
+                type="button"
+                wire:click="exportMonthly"
+                wire:loading.attr="disabled"
+                wire:target="exportMonthly"
+                class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+                <span wire:loading.remove wire:target="exportMonthly">
+                    Export Bulanan
+                </span>
 
-        <button
-            type="button"
-            wire:click="exportMonthly"
-            wire:loading.attr="disabled"
-            class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-            <span wire:loading.remove wire:target="exportMonthly">
-                Export Bulanan
-            </span>
-
-            <span wire:loading wire:target="exportMonthly">
-                Menyiapkan Export...
-            </span>
-        </button>
-    </div>
-
-    <div class="mb-4 rounded-xl border border-yellow-300 bg-yellow-50 p-4">
+                <span wire:loading.flex wire:target="exportMonthly" class="items-center gap-2">
+                    <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                    Menyiapkan...
+                </span>
+            </button>
+        </x-slot:action>
+    </x-ui.page-header>
 
     {{-- Filter --}}
-    <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+    <x-ui.card padding="p-5">
+        <div class="mb-5 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+                <h2 class="text-base font-bold text-slate-900">
+                    Filter Laporan
+                </h2>
+                <p class="mt-1 text-sm text-slate-500">
+                    Gunakan filter untuk melihat laporan berdasarkan periode, pegawai, tupoksi, server, atau aplikasi.
+                </p>
+            </div>
+
+            <x-ui.loading
+                target="month,year,employeeId,dutyId,serverId,applicationId,search,resetFilter"
+                text="Memuat laporan..."
+            />
+        </div>
+
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
-                <label class="mb-1 block text-sm font-medium text-gray-700">
+                <label class="mb-1.5 block text-sm font-semibold text-slate-700">
                     Bulan
                 </label>
 
                 <select
                     wire:model.change="month"
-                    class="w-full rounded-xl border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                 >
                     @foreach($months as $value => $label)
                         <option value="{{ $value }}">
@@ -49,13 +61,13 @@
             </div>
 
             <div>
-                <label class="mb-1 block text-sm font-medium text-gray-700">
+                <label class="mb-1.5 block text-sm font-semibold text-slate-700">
                     Tahun
                 </label>
 
                 <select
                     wire:model.change="year"
-                    class="w-full rounded-xl border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                 >
                     @foreach($years as $item)
                         <option value="{{ $item }}">
@@ -66,13 +78,13 @@
             </div>
 
             <div>
-                <label class="mb-1 block text-sm font-medium text-gray-700">
+                <label class="mb-1.5 block text-sm font-semibold text-slate-700">
                     Pegawai
                 </label>
 
                 <select
                     wire:model.change="employeeId"
-                    class="w-full rounded-xl border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                 >
                     <option value="">Semua Pegawai</option>
 
@@ -85,13 +97,13 @@
             </div>
 
             <div>
-                <label class="mb-1 block text-sm font-medium text-gray-700">
+                <label class="mb-1.5 block text-sm font-semibold text-slate-700">
                     Tupoksi
                 </label>
 
                 <select
                     wire:model.change="dutyId"
-                    class="w-full rounded-xl border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                 >
                     <option value="">Semua Tupoksi</option>
 
@@ -104,13 +116,13 @@
             </div>
 
             <div>
-                <label class="mb-1 block text-sm font-medium text-gray-700">
+                <label class="mb-1.5 block text-sm font-semibold text-slate-700">
                     Server
                 </label>
 
                 <select
                     wire:model.change="serverId"
-                    class="w-full rounded-xl border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                 >
                     <option value="">Semua Server</option>
 
@@ -123,13 +135,13 @@
             </div>
 
             <div>
-                <label class="mb-1 block text-sm font-medium text-gray-700">
+                <label class="mb-1.5 block text-sm font-semibold text-slate-700">
                     Aplikasi
                 </label>
 
                 <select
                     wire:model.change="applicationId"
-                    class="w-full rounded-xl border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                 >
                     <option value="">Semua Aplikasi</option>
 
@@ -141,92 +153,97 @@
                 </select>
 
                 @if($serverId)
-                    <p class="mt-1 text-xs text-gray-500">
+                    <p class="mt-1.5 text-xs text-slate-500">
                         Aplikasi difilter berdasarkan server terpilih.
                     </p>
                 @endif
             </div>
 
-            <div class="xl:col-span-2">
-                <label class="mb-1 block text-sm font-medium text-gray-700">
-                    Search
+            <div class="md:col-span-2">
+                <label class="mb-1.5 block text-sm font-semibold text-slate-700">
+                    Pencarian
                 </label>
 
-                <input
-                    type="text"
-                    wire:model.live.debounce.500ms="search"
-                    placeholder="Cari judul, deskripsi, hasil, pegawai, tupoksi, server, aplikasi..."
-                    class="w-full rounded-xl border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                >
+                <div class="relative">
+                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.3-4.3M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" />
+                        </svg>
+                    </div>
+
+                    <input
+                        type="text"
+                        wire:model.live.debounce.500ms="search"
+                        placeholder="Cari judul, deskripsi, pegawai, tupoksi, server, aplikasi..."
+                        class="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-700 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                    >
+                </div>
             </div>
         </div>
 
-        <div class="mt-4 flex flex-col gap-3 rounded-xl bg-gray-50 px-4 py-3 text-xs text-gray-600 lg:flex-row lg:items-center lg:justify-between">
+        {{-- Active Filter --}}
+        <div class="mt-5 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600 lg:flex-row lg:items-center lg:justify-between">
             <div class="flex flex-wrap items-center gap-2">
-                <span>
+                <span class="font-semibold text-slate-600">
                     Filter aktif:
                 </span>
 
-                <span class="rounded-full bg-white px-3 py-1 font-semibold text-gray-800 shadow-sm">
+                <span class="rounded-full bg-white px-3 py-1 font-semibold text-slate-800 shadow-sm ring-1 ring-slate-200">
                     {{ $months[(int) $month] ?? '-' }} {{ $year }}
                 </span>
 
                 @if($employeeId)
-                    <span class="rounded-full bg-white px-3 py-1 text-gray-700 shadow-sm">
+                    <span class="rounded-full bg-white px-3 py-1 text-slate-700 shadow-sm ring-1 ring-slate-200">
                         Pegawai: {{ $employees->firstWhere('id', (int) $employeeId)?->name }}
                     </span>
                 @endif
 
                 @if($dutyId)
-                    <span class="rounded-full bg-white px-3 py-1 text-gray-700 shadow-sm">
+                    <span class="rounded-full bg-white px-3 py-1 text-slate-700 shadow-sm ring-1 ring-slate-200">
                         Tupoksi: {{ $duties->firstWhere('id', (int) $dutyId)?->name }}
                     </span>
                 @endif
 
                 @if($serverId)
-                    <span class="rounded-full bg-white px-3 py-1 text-gray-700 shadow-sm">
+                    <span class="rounded-full bg-white px-3 py-1 text-slate-700 shadow-sm ring-1 ring-slate-200">
                         Server: {{ $servers->firstWhere('id', (int) $serverId)?->name }}
                     </span>
                 @endif
 
                 @if($applicationId)
-                    <span class="rounded-full bg-white px-3 py-1 text-gray-700 shadow-sm">
+                    <span class="rounded-full bg-white px-3 py-1 text-slate-700 shadow-sm ring-1 ring-slate-200">
                         Aplikasi: {{ $applications->firstWhere('id', (int) $applicationId)?->name }}
                     </span>
                 @endif
 
                 @if($search)
-                    <span class="rounded-full bg-white px-3 py-1 text-gray-700 shadow-sm">
+                    <span class="rounded-full bg-white px-3 py-1 text-slate-700 shadow-sm ring-1 ring-slate-200">
                         Search: "{{ $search }}"
                     </span>
                 @endif
             </div>
 
-            <div class="flex items-center gap-3">
-                <div wire:loading class="text-blue-600">
-                    Memuat data laporan...
-                </div>
-
-                <button
-                    type="button"
-                    wire:click="resetFilter"
-                    class="rounded-lg bg-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-300"
-                >
-                    Reset Filter
-                </button>
-            </div>
+            <button
+                type="button"
+                wire:click="resetFilter"
+                wire:loading.attr="disabled"
+                wire:target="resetFilter"
+                class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+                Reset Filter
+            </button>
         </div>
-    </div>
+    </x-ui.card>
 
     {{-- Rekap --}}
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <x-ui.card padding="p-5">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-500">
+                    <p class="text-sm font-semibold text-slate-500">
                         Total Laporan
                     </p>
-                    <p class="mt-2 text-3xl font-bold text-gray-900">
+                    <p class="mt-2 text-3xl font-bold text-slate-900">
                         {{ number_format($recap['total_reports']) }}
                     </p>
                 </div>
@@ -236,36 +253,36 @@
                 </div>
             </div>
 
-            <p class="mt-4 text-xs text-gray-500">
+            <p class="mt-4 text-xs leading-5 text-slate-500">
                 Total laporan pada {{ $months[(int) $month] ?? '-' }} {{ $year }}.
             </p>
-        </div>
+        </x-ui.card>
 
-        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <x-ui.card padding="p-5">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-500">
+                    <p class="text-sm font-semibold text-slate-500">
                         Total Pegawai Unit
                     </p>
-                    <p class="mt-2 text-3xl font-bold text-gray-900">
+                    <p class="mt-2 text-3xl font-bold text-slate-900">
                         {{ number_format($recap['total_employees']) }}
                     </p>
                 </div>
 
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-100 text-2xl">
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-2xl">
                     👥
                 </div>
             </div>
 
-            <p class="mt-4 text-xs text-gray-500">
+            <p class="mt-4 text-xs leading-5 text-slate-500">
                 Pegawai aktif dalam unit Kanit.
             </p>
-        </div>
+        </x-ui.card>
 
-        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <x-ui.card padding="p-5">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-500">
+                    <p class="text-sm font-semibold text-slate-500">
                         Sudah Input
                     </p>
                     <p class="mt-2 text-3xl font-bold text-emerald-600">
@@ -278,15 +295,15 @@
                 </div>
             </div>
 
-            <p class="mt-4 text-xs text-gray-500">
+            <p class="mt-4 text-xs leading-5 text-slate-500">
                 Pegawai yang sudah membuat minimal satu laporan.
             </p>
-        </div>
+        </x-ui.card>
 
-        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <x-ui.card padding="p-5">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-500">
+                    <p class="text-sm font-semibold text-slate-500">
                         Belum Input
                     </p>
                     <p class="mt-2 text-3xl font-bold text-red-600">
@@ -299,126 +316,167 @@
                 </div>
             </div>
 
-            <p class="mt-4 text-xs text-gray-500">
+            <p class="mt-4 text-xs leading-5 text-slate-500">
                 Pegawai yang belum membuat laporan pada periode ini.
             </p>
-        </div>
+        </x-ui.card>
     </div>
 
     {{-- Table --}}
-    <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <div class="border-b border-gray-200 px-5 py-4">
-            <h2 class="text-base font-semibold text-gray-900">
-                Daftar Laporan Pegawai
-            </h2>
-            <p class="mt-1 text-sm text-gray-500">
-                Data laporan hanya menampilkan pegawai dalam unit Kanit.
-            </p>
-        </div>
-
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                            Tanggal
-                        </th>
-                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                            Pegawai
-                        </th>
-                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                            Laporan
-                        </th>
-                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                            Tupoksi
-                        </th>
-                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                            Server / Aplikasi
-                        </th>
-                        <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">
-                            Foto
-                        </th>
-                        <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
-                            Aksi
-                        </th>
-                    </tr>
-                </thead>
-
-                <tbody class="divide-y divide-gray-100 bg-white">
-                    @forelse($reports as $report)
-                        <tr class="hover:bg-gray-50">
-                            <td class="whitespace-nowrap px-5 py-4 text-sm text-gray-700">
-                                {{ optional($report->report_date)->format('d/m/Y') }}
-                            </td>
-
-                            <td class="px-5 py-4">
-                                <div class="text-sm font-semibold text-gray-900">
-                                    {{ $report->employee->name ?? '-' }}
-                                </div>
-                                <div class="text-xs text-gray-500">
-                                    {{ $report->employee->position ?? '-' }}
-                                </div>
-                            </td>
-
-                            <td class="px-5 py-4">
-                                <div class="max-w-sm">
-                                    <div class="text-sm font-semibold text-gray-900">
-                                        {{ $report->title }}
-                                    </div>
-                                    <div class="mt-1 line-clamp-2 text-xs leading-5 text-gray-500">
-                                        {{ $report->description }}
-                                    </div>
-                                </div>
-                            </td>
-
-                            <td class="px-5 py-4 text-sm text-gray-700">
-                                {{ $report->duty->name ?? '-' }}
-                            </td>
-
-                            <td class="px-5 py-4">
-                                <div class="text-sm text-gray-800">
-                                    {{ $report->server->name ?? '-' }}
-                                </div>
-                                <div class="text-xs text-gray-500">
-                                    {{ $report->application->name ?? '-' }}
-                                </div>
-                            </td>
-
-                            <td class="px-5 py-4 text-center">
-                                <span class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
-                                    {{ $report->photos->count() }} foto
-                                </span>
-                            </td>
-
-                            <td class="whitespace-nowrap px-5 py-4 text-right text-sm">
-                                <a href="{{ route('kanit.reports.detail', $report) }}"
-                                    class="inline-flex items-center rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700">
-                                        Detail
-                                </a>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7" class="px-5 py-12 text-center">
-                                <div class="mx-auto max-w-md">
-                                    <div class="text-base font-semibold text-gray-900">
-                                        Belum ada laporan
-                                    </div>
-                                    <p class="mt-1 text-sm text-gray-500">
-                                        Tidak ada laporan pada bulan dan tahun yang dipilih.
-                                    </p>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        @if($reports->hasPages())
-            <div class="border-t border-gray-200 px-5 py-4">
-                {{ $reports->links() }}
+    <div class="relative">
+        {{-- Loading overlay --}}
+        <div
+            wire:loading.flex
+            wire:target="month,year,employeeId,dutyId,serverId,applicationId,search,gotoPage,nextPage,previousPage,resetFilter"
+            class="absolute inset-0 z-20 hidden items-start justify-center rounded-2xl bg-white/60 pt-20 backdrop-blur-[1px]"
+        >
+            <div class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm">
+                <span class="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></span>
+                Memuat data laporan...
             </div>
+        </div>
+
+        @if($reports->count())
+            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div class="border-b border-slate-200 px-5 py-4">
+                    <h2 class="text-base font-bold text-slate-900">
+                        Daftar Laporan Pegawai
+                    </h2>
+                    <p class="mt-1 text-sm text-slate-500">
+                        Data laporan hanya menampilkan pegawai dalam unit Kanit.
+                    </p>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th class="w-[120px] px-5 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                                    Tanggal
+                                </th>
+                                <th class="min-w-[180px] px-5 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                                    Pegawai
+                                </th>
+                                <th class="min-w-[340px] px-5 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                                    Laporan
+                                </th>
+                                <th class="min-w-[180px] px-5 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                                    Tupoksi
+                                </th>
+                                <th class="min-w-[180px] px-5 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                                    Server / Aplikasi
+                                </th>
+                                <th class="w-[100px] px-5 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-500">
+                                    Foto
+                                </th>
+                                <th class="w-[100px] px-5 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-500">
+                                    Aksi
+                                </th>
+                            </tr>
+                        </thead>
+
+                        <tbody
+                            wire:loading.class="opacity-50"
+                            wire:target="month,year,employeeId,dutyId,serverId,applicationId,search,gotoPage,nextPage,previousPage,resetFilter"
+                            class="divide-y divide-slate-100 bg-white transition"
+                        >
+                            @foreach($reports as $report)
+                                <tr class="transition hover:bg-slate-50/80">
+                                    <td class="whitespace-nowrap px-5 py-4 align-top">
+                                        <div class="text-sm font-semibold text-slate-800">
+                                            {{ optional($report->report_date)->format('d/m/Y') }}
+                                        </div>
+                                    </td>
+
+                                    <td class="px-5 py-4 align-top">
+                                        <div class="text-sm font-semibold text-slate-900">
+                                            {{ $report->employee->name ?? '-' }}
+                                        </div>
+                                        <div class="mt-1 text-xs text-slate-500">
+                                            {{ $report->employee->position ?? '-' }}
+                                        </div>
+                                    </td>
+
+                                    <td class="px-5 py-4 align-top">
+                                        <div class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                                            <div class="text-sm font-bold text-slate-900">
+                                                {{ $report->title }}
+                                            </div>
+
+                                            <div class="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                                                {{ $report->description }}
+                                            </div>
+
+                                            @if(!empty($report->notes))
+                                                <div class="mt-2 line-clamp-1 text-xs leading-5 text-slate-500">
+                                                    <span class="font-semibold text-slate-600">Catatan:</span>
+                                                    {{ $report->notes }}
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </td>
+
+                                    <td class="px-5 py-4 align-top">
+                                        @if($report->duty)
+                                            <x-ui.badge variant="primary">
+                                                {{ $report->duty->name }}
+                                            </x-ui.badge>
+                                        @else
+                                            <span class="text-sm text-slate-400">-</span>
+                                        @endif
+                                    </td>
+
+                                    <td class="px-5 py-4 align-top">
+                                        <div class="text-sm font-semibold text-slate-800">
+                                            {{ $report->server->name ?? '-' }}
+                                        </div>
+                                        <div class="mt-1 text-xs text-slate-500">
+                                            {{ $report->application->name ?? '-' }}
+                                        </div>
+                                    </td>
+
+                                    <td class="px-5 py-4 text-center align-top">
+                                        <x-ui.badge variant="{{ $report->photos->count() > 0 ? 'success' : 'neutral' }}">
+                                            {{ $report->photos->count() }} foto
+                                        </x-ui.badge>
+                                    </td>
+
+                                    <td class="whitespace-nowrap px-5 py-4 text-right align-top text-sm">
+                                        <a
+                                            href="{{ route('kanit.reports.detail', $report) }}"
+                                            class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100"
+                                        >
+                                            Detail
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                @if($reports->hasPages())
+                    <div class="border-t border-slate-200 bg-white px-5 py-4">
+                        {{ $reports->links() }}
+                    </div>
+                @endif
+            </div>
+        @else
+            <x-ui.empty-state
+                icon="📄"
+                title="Belum ada laporan"
+                message="Tidak ada laporan pada filter bulan, tahun, atau pegawai yang dipilih."
+            >
+                <x-slot:action>
+                    <button
+                        type="button"
+                        wire:click="resetFilter"
+                        class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                    >
+                        Reset Filter
+                    </button>
+                </x-slot:action>
+            </x-ui.empty-state>
         @endif
     </div>
 </div>
