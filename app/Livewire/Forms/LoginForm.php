@@ -39,6 +39,21 @@ class LoginForm extends Form
             ]);
         }
 
+        $user = Auth::user();
+
+        if (! $user->is_active) {
+            Auth::logout();
+
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'form.email' => 'Akun Anda sedang nonaktif. Silakan hubungi admin.',
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

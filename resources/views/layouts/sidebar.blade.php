@@ -41,6 +41,27 @@
                 </x-sidebar-link>
 
                 <x-sidebar-link
+                    :href="route('admin.admin.positions.index')"
+                    :active="request()->routeIs('admin.admin.positions.*')"
+                >
+                    Master Jabatan
+                </x-sidebar-link>
+
+                <x-sidebar-link
+                    :href="route('admin.user-management.missing-accounts')"
+                    :active="request()->routeIs('admin.user-management.missing-accounts.*')"
+                >
+                    Aktivasi Akun
+                </x-sidebar-link>
+
+                <x-sidebar-link
+                    :href="route('admin.user-management.users.index')"
+                    :active="request()->routeIs('admin.user-management.users.index.*')"
+                >
+                    Managemen User
+                </x-sidebar-link>
+
+                <x-sidebar-link
                     :href="route('admin.master-data.tupoksi.index')"
                     :active="request()->routeIs('admin.master-data.tupoksi.*')"
                 >
@@ -67,6 +88,8 @@
                 >
                     Template Laporan
                 </x-sidebar-link>
+
+                
             @endif
 
             @if(auth()->user()?->isKanit())

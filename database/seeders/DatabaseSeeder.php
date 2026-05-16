@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             EmployeeSeeder::class,
             UserSeeder::class,
             MasterDataSeeder::class,
+            PositionSeeder::class,
         ]);
     }
 }

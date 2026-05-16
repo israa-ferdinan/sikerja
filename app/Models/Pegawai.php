@@ -2,30 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-
-class Pegawai extends Model
+class Pegawai extends Employee
 {
-    
-
-    protected $fillable = [
-        'unit_id',
-        'name',
-        'nip',
-        'position',
-        'phone',
-        'is_active',
-    ];
-
+    /**
+     * Model sementara untuk kompatibilitas kode lama.
+     *
+     * Tabel tetap memakai employees karena struktur database utama
+     * project ini adalah employees, bukan pegawais.
+     */
     protected $table = 'employees';
-
-    public function unit()
-    {
-        return $this->belongsTo(Unit::class);
-    }
-
-    public function dailyReports()
-    {
-        return $this->hasMany(DailyReport::class);
-    }
 }

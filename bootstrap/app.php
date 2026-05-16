@@ -4,7 +4,9 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\EnsureUserIsKanit;
+use App\Http\Middleware\EnsureUserIsActive;
 use Illuminate\Foundation\Configuration\Middleware;
+
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -16,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
     $middleware->alias([
         'role' => \App\Http\Middleware\RoleMiddleware::class,
         'kanit' => EnsureUserIsKanit::class,
+        'active.user' => EnsureUserIsActive::class,
     ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -65,7 +65,7 @@
                                 </td>
 
                                 <td class="border-b px-3 py-3">
-                                    {{ $pegawai->position ?? '-' }}
+                                    {{ $pegawai->positionData?->name ?? '-' }}
                                 </td>
 
                                 <td class="border-b px-3 py-3">
@@ -198,15 +198,21 @@
                                 Jabatan
                             </label>
 
-                            <input
-                                type="text"
-                                wire:model.defer="position"
-                                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                                placeholder="Contoh: Pranata Komputer"
+                            <select
+                                wire:model.live="position_id"
+                                class="w-full rounded-xl border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
                             >
+                                <option value="">Pilih Jabatan</option>
 
-                            @error('position')
-                                <div class="mt-1 text-sm text-red-600">{{ $message }}</div>
+                                @foreach ($positions as $position)
+                                    <option value="{{ $position->id }}">
+                                        {{ $position->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+
+                            @error('position_id')
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 

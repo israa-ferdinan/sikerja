@@ -7,10 +7,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+use App\Models\Position;
+use App\Models\User;
+
 class Employee extends Model
 {
     protected $fillable = [
         'unit_id',
+        'position_id',
         'name',
         'nip',
         'position',
@@ -23,6 +27,8 @@ class Employee extends Model
         'is_active' => 'boolean',
     ];
 
+    protected $table = 'employees';
+    
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class);
@@ -36,5 +42,10 @@ class Employee extends Model
     public function dailyReports(): HasMany
     {
         return $this->hasMany(DailyReport::class, 'employee_id');
+    }
+
+    public function positionData(): BelongsTo
+    {
+        return $this->belongsTo(Position::class, 'position_id');
     }
 }

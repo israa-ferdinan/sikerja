@@ -2,8 +2,9 @@
 
 namespace App\Livewire\Admin\MasterData\Pegawai;
 
-use App\Models\Pegawai;
+use App\Models\Employee;
 use App\Models\Unit;
+use App\Models\Position;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -13,13 +14,14 @@ class Index extends Component
 
     public $search = '';
 
-    public $pegawaiId;
+    public $employeeId;
     public $unit_id;
     public $name;
     public $nip;
     public $position;
     public $phone;
     public $is_active = true;
+    public ?int $position_id = null;
 
     public $isEdit = false;
     public $showModal = false;
@@ -30,6 +32,7 @@ class Index extends Component
             'unit_id' => 'required|exists:units,id',
             'name' => 'required|string|max:150',
             'nip' => 'nullable|string|max:50',
+            'position_id' => ['nullable', 'exists:positions,id'],
             'position' => 'nullable|string|max:150',
             'phone' => 'nullable|string|max:30',
             'is_active' => 'boolean',
@@ -50,12 +53,13 @@ class Index extends Component
 
     public function openEditModal($id)
     {
-        $pegawai = Pegawai::findOrFail($id);
+        $pegawai = Employee::findOrFail($id);
 
-        $this->pegawaiId = $pegawai->id;
+        $this->employeeId = $pegawai->id;
         $this->unit_id = $pegawai->unit_id;
         $this->name = $pegawai->name;
         $this->nip = $pegawai->nip;
+        $this->position_id = $pegawai->position_id;
         $this->position = $pegawai->position;
         $this->phone = $pegawai->phone;
         $this->is_active = (bool) $pegawai->is_active;
@@ -68,12 +72,13 @@ class Index extends Component
     {
         $this->validate();
 
-        Pegawai::updateOrCreate(
-            ['id' => $this->pegawaiId],
+        Employee::updateOrCreate(
+            ['id' => $this->employeeId],
             [
                 'unit_id' => $this->unit_id,
                 'name' => $this->name,
                 'nip' => $this->nip,
+                'position_id' => $this->position_id,
                 'position' => $this->position,
                 'phone' => $this->phone,
                 'is_active' => $this->is_active,
@@ -87,7 +92,7 @@ class Index extends Component
 
     public function delete($id)
     {
-        Pegawai::findOrFail($id)->delete();
+        Employee::findOrFail($id)->delete();
 
         session()->flash('success', 'Pegawai berhasil dihapus.');
     }
@@ -101,10 +106,11 @@ class Index extends Component
     private function resetForm()
     {
         $this->reset([
-            'pegawaiId',
+            'employeeId',
             'unit_id',
             'name',
             'nip',
+            'position_id',
             'position',
             'phone',
             'isEdit',
@@ -116,8 +122,8 @@ class Index extends Component
 
     public function render()
     {
-        $pegawais = Pegawai::query()
-            ->with('unit')
+        $pegawais = Employee::query()
+            ->with(['unit', 'positionData'])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('name', 'like', '%' . $this->search . '%')
@@ -136,9 +142,15 @@ class Index extends Component
             ->orderBy('name')
             ->get();
 
+        $positions = Position::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
         return view('livewire.admin.master-data.pegawai.index', [
             'pegawais' => $pegawais,
             'units' => $units,
+            'positions' => $positions,
         ])->layout('layouts.app');
     }
 }

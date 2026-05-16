@@ -11,6 +11,9 @@ use App\Livewire\Admin\MasterData\Unit\Index as UnitIndex;
 use App\Livewire\Admin\MasterData\Server\Index as ServerIndex;
 use App\Livewire\Admin\MasterData\Aplikasi\Index as AplikasiIndex;
 use App\Livewire\Admin\MasterData\ReportTemplate\Index as ReportTemplateIndex;
+use App\Livewire\Admin\Positions\Index as PositionIndex;
+use App\Livewire\Admin\UserManagement\MissingAccounts;
+use App\Livewire\Admin\UserManagement\Users\Index as UserManagementIndex;
 
 use App\Livewire\Kanit\Dashboard as KanitDashboard;
 use App\Livewire\Kanit\ReportMonitoring;
@@ -29,7 +32,7 @@ Route::get('/', function () {
         : redirect()->route('login');
 });
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'active.user'])->group(function () {
     Route::get('/dashboard', function () {
         $role = auth()->user()->role?->name;
 
@@ -66,7 +69,16 @@ Route::middleware(['role:admin'])
             ->name('master-data.aplikasi.index');
 
         Route::get('/master-data/template-laporan', ReportTemplateIndex::class)
-            ->name('master-data.report-template.index');            
+            ->name('master-data.report-template.index'); 
+            
+        Route::get('/positions', PositionIndex::class)
+            ->name('admin.positions.index');
+        
+        Route::get('/user-management/missing-accounts', MissingAccounts::class)
+            ->name('user-management.missing-accounts');
+
+        Route::get('/user-management/users', UserManagementIndex::class)
+            ->name('user-management.users.index');
     }); 
 
 Route::middleware(['auth', 'kanit'])->prefix('kanit')->name('kanit.')->group(function () {

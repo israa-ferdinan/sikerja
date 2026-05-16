@@ -20,6 +20,7 @@ class User extends Authenticatable
         'password',
         'role_id',
         'employee_id',
+        'is_active',
     ];
 
     protected $hidden = [
@@ -30,6 +31,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'is_active' => 'boolean',
     ];
 
     public function role(): BelongsTo
@@ -64,7 +66,7 @@ class User extends Authenticatable
         return $this->hasMany(DailyReport::class);
     }
 
-    public function employee()
+    public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'employee_id');
     }
