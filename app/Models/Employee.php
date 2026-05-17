@@ -44,7 +44,7 @@ class Employee extends Model
         return $this->hasMany(DailyReport::class, 'employee_id');
     }
 
-    public function positionData(): BelongsTo
+    public function position(): BelongsTo
     {
         return $this->belongsTo(Position::class, 'position_id');
     }

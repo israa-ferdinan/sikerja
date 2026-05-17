@@ -25,6 +25,7 @@ use App\Livewire\Reports\CreateDailyReport;
 use App\Livewire\Reports\MyDailyReports;
 use App\Livewire\Reports\ShowDailyReport;
 use App\Livewire\Reports\EditDailyReport;
+use App\Livewire\Reports\ExportMonthlyReport;
 
 Route::get('/', function () {
     return auth()->check()
@@ -79,6 +80,9 @@ Route::middleware(['role:admin'])
 
         Route::get('/user-management/users', UserManagementIndex::class)
             ->name('user-management.users.index');
+
+        Route::get('/reports/export/monthly', ExportMonthlyReport::class)
+            ->name('reports.export.monthly');
     }); 
 
 Route::middleware(['auth', 'kanit'])->prefix('kanit')->name('kanit.')->group(function () {
@@ -91,6 +95,9 @@ Route::middleware(['auth', 'kanit'])->prefix('kanit')->name('kanit.')->group(fun
     Route::get('/monitoring-laporan/{report}', ReportDetail::class)
         ->name('reports.detail');
     });
+
+    Route::get('/reports/export/monthly', ExportMonthlyReport::class)
+        ->name('reports.export.monthly');
 
 Route::middleware(['role:pegawai'])
     ->prefix('pegawai')

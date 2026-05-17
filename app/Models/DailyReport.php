@@ -5,6 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
+use App\Models\Employee;
+use App\Models\Unit;
+use App\Models\JobDuty;
+use App\Models\Server;
+use App\Models\Application;
+use App\Models\DailyReportPhoto;
+
 class DailyReport extends Model
 {
     use HasFactory;
@@ -44,7 +51,7 @@ class DailyReport extends Model
 
     public function duty()
     {
-        return $this->belongsTo(Duty::class);
+        return $this->belongsTo(JobDuty::class, 'duty_id');
     }
 
     public function server()

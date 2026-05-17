@@ -89,6 +89,12 @@
                     Template Laporan
                 </x-sidebar-link>
 
+                <x-sidebar-link
+                    :href="route('reports.export.monthly')"
+                    :active="request()->routeIs('reports.export.monthly.*')"
+                >
+                    Rekap & Export
+                </x-sidebar-link>
                 
             @endif
 
@@ -112,6 +118,14 @@
                 >
                     Monitoring Laporan Unit
                 </x-sidebar-link>
+
+                <x-sidebar-link
+                    :href="route('reports.export.monthly')"
+                    :active="request()->routeIs('reports.export.monthly.*')"
+                >
+                    Rekap & Export
+                </x-sidebar-link>
+
             @endif
 
             @if(auth()->user()->isPegawai())
