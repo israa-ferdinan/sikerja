@@ -125,7 +125,7 @@ class Index extends Component
             ->with([
                 'role',
                 'employee.unit',
-                'employee.positionData',
+                'employee.position',
             ])
             ->when($this->search, function ($query) {
                 $query->where(function ($subQuery) {
@@ -138,7 +138,7 @@ class Index extends Component
                                 ->orWhereHas('unit', function ($unitQuery) {
                                     $unitQuery->where('name', 'like', '%' . $this->search . '%');
                                 })
-                                ->orWhereHas('positionData', function ($positionQuery) {
+                                ->orWhereHas('position', function ($positionQuery) {
                                     $positionQuery->where('name', 'like', '%' . $this->search . '%');
                                 });
                         });

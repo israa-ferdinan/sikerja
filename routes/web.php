@@ -14,6 +14,7 @@ use App\Livewire\Admin\MasterData\ReportTemplate\Index as ReportTemplateIndex;
 use App\Livewire\Admin\Positions\Index as PositionIndex;
 use App\Livewire\Admin\UserManagement\MissingAccounts;
 use App\Livewire\Admin\UserManagement\Users\Index as UserManagementIndex;
+use App\Livewire\Admin\MasterData\Pegawai\ManageDuties;
 
 use App\Livewire\Kanit\Dashboard as KanitDashboard;
 use App\Livewire\Kanit\ReportMonitoring;
@@ -62,6 +63,9 @@ Route::middleware(['role:admin'])
 
         Route::get('/master-data/tupoksi', TupoksiIndex::class)
             ->name('master-data.tupoksi.index');
+
+        Route::get('/master-data/pegawai/{employee}/duties', ManageDuties::class)
+            ->name('master-data.pegawai.duties');
 
         Route::get('/master-data/server', ServerIndex::class)
             ->name('master-data.server.index');

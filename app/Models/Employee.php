@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 use App\Models\Position;
 use App\Models\User;
+use App\Models\JobDuty;
 
 class Employee extends Model
 {
@@ -47,5 +48,12 @@ class Employee extends Model
     public function position(): BelongsTo
     {
         return $this->belongsTo(Position::class, 'position_id');
+    }
+
+    public function duties()
+    {
+        return $this->belongsToMany(JobDuty::class, 'employee_duty', 'employee_id', 'duty_id')
+            ->withPivot(['is_primary', 'notes'])
+            ->withTimestamps();
     }
 }

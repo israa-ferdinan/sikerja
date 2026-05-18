@@ -123,7 +123,8 @@ class Index extends Component
     public function render()
     {
         $pegawais = Employee::query()
-            ->with(['unit', 'positionData'])
+            ->with(['unit', 'position'])
+            ->withCount('duties')
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('name', 'like', '%' . $this->search . '%')
@@ -131,6 +132,9 @@ class Index extends Component
                         ->orWhere('position', 'like', '%' . $this->search . '%')
                         ->orWhereHas('unit', function ($unitQuery) {
                             $unitQuery->where('name', 'like', '%' . $this->search . '%');
+                        })
+                        ->orWhereHas('position', function ($positionQuery) {
+                            $positionQuery->where('name', 'like', '%' . $this->search . '%');
                         });
                 });
             })

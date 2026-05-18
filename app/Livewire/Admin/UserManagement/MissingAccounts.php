@@ -63,7 +63,7 @@ class MissingAccounts extends Component
     public function render()
     {
         $employees = Employee::query()
-            ->with(['unit', 'positionData'])
+            ->with(['unit', 'position'])
             ->whereDoesntHave('user')
             ->when($this->search, function ($query) {
                 $query->where(function ($subQuery) {
@@ -74,7 +74,7 @@ class MissingAccounts extends Component
                         ->orWhereHas('unit', function ($unitQuery) {
                             $unitQuery->where('name', 'like', '%' . $this->search . '%');
                         })
-                        ->orWhereHas('positionData', function ($positionQuery) {
+                        ->orWhereHas('position', function ($positionQuery) {
                             $positionQuery->where('name', 'like', '%' . $this->search . '%');
                         });
                 });
@@ -117,7 +117,7 @@ class MissingAccounts extends Component
 
     public function openCreateUserModal(int $employeeId): void
     {
-        $employee = Employee::with(['unit', 'positionData'])->findOrFail($employeeId);
+        $employee = Employee::with(['unit', 'position'])->findOrFail($employeeId);
 
         if ($employee->user) {
             session()->flash('error', 'Pegawai ini sudah memiliki akun user.');

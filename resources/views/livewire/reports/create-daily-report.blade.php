@@ -131,8 +131,11 @@
                         <select
                             wire:model.change="form.duty_id"
                             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                        >
-                            <option value="">-- Pilih Tupoksi --</option>
+                            @disabled($duties->isEmpty())                       
+                            >  
+                            <option value="">
+                                {{ $duties->isEmpty() ? 'Belum ada tupoksi yang ditugaskan' : 'Pilih Tupoksi' }}
+                            </option>
 
                             @foreach ($duties as $duty)
                                 <option value="{{ $duty->id }}">
@@ -140,6 +143,16 @@
                                 </option>
                             @endforeach
                         </select>
+
+                        @if ($duties->isEmpty())
+                            <p class="mt-2 rounded-lg bg-yellow-50 px-3 py-2 text-sm text-yellow-700">
+                                Belum ada tupoksi yang ditugaskan ke akun Anda. Silakan hubungi admin.
+                            </p>
+                        @endif
+
+                        @error('duty_id')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
 
                         @error('form.duty_id')
                             <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
@@ -379,6 +392,7 @@
 
                     <button
                         type="submit"
+                        @disabled($duties->isEmpty())
                         wire:loading.attr="disabled"
                         wire:target="save,newPhotos"
                         class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-70"

@@ -38,8 +38,8 @@ class CreateDailyReport extends Component
     public array $newPhotos = [];
     public int $photoInputKey = 0;
 
-    public $template_id;
     public $templates = [];
+    public $duties = [];
 
     public function mount()
     {
@@ -47,19 +47,19 @@ class CreateDailyReport extends Component
 
         if (! $user->employee_id || ! $user->employee) {
             $this->missingEmployee = true;
+            $this->duties = collect();
             return;
         }
 
         if (! $user->employee->unit_id) {
             $this->missingUnit = true;
+            $this->duties = collect();
             return;
         }
 
-        $this->report_date = now()->format('Y-m-d');
+        $this->form['report_date'] = now()->format('Y-m-d');
 
-        $this->duties = Duty::orderBy('name')->get();
-        $this->servers = Server::orderBy('name')->get();
-        $this->applications = collect();
+        $this->loadEmployeeDuties();
 
         $this->templates = ReportTemplate::query()
             ->where('is_active', 1)
@@ -67,9 +67,49 @@ class CreateDailyReport extends Component
             ->get();
     }
 
+    private function loadEmployeeDuties(): void
+    {
+        $employee = Auth::user()?->employee;
+
+        if (! $employee) {
+            $this->duties = collect();
+            return;
+        }
+
+        $this->duties = $employee->duties()
+            ->with('unit')
+            ->orderBy('name')
+            ->get();
+    }
+
     public function updatedFormServerId($value): void
     {
         $this->form['application_id'] = '';
+    }
+
+    public function updatedFormDutyId($value): void
+    {
+        if (empty($value)) {
+            return;
+        }
+
+        $employee = Auth::user()?->employee;
+
+        if (! $employee) {
+            $this->form['duty_id'] = '';
+            $this->addError('form.duty_id', 'Data pegawai tidak ditemukan pada akun ini.');
+            return;
+        }
+
+        $isDutyAssignedToEmployee = $employee->duties()
+            ->where('duties.id', $value)
+            ->exists();
+
+        if (! $isDutyAssignedToEmployee) {
+            $this->form['duty_id'] = '';
+            $this->addError('form.duty_id', 'Tupoksi tidak tersedia untuk pegawai ini.');
+            return;
+        }
     }
 
     public function updatedFormTemplateId($value): void
@@ -149,6 +189,17 @@ class CreateDailyReport extends Component
             return;
         }
 
+        $employee = $user->employee;
+
+        $isDutyAssignedToEmployee = $employee?->duties()
+            ->where('duties.id', $lastReport->duty_id)
+            ->exists();
+
+        if (! $isDutyAssignedToEmployee) {
+            session()->flash('error', 'Laporan terakhir menggunakan tupoksi yang belum ditugaskan ke akun Anda.');
+            return;
+        }
+
         $this->form['duty_id'] = $lastReport->duty_id ? (string) $lastReport->duty_id : '';
         $this->form['server_id'] = $lastReport->server_id ? (string) $lastReport->server_id : '';
         $this->form['application_id'] = $lastReport->application_id ? (string) $lastReport->application_id : '';
@@ -173,7 +224,7 @@ class CreateDailyReport extends Component
 
         $validated = $this->validate([
             'form.report_date' => ['required', 'date'],
-            'form.duty_id' => ['nullable', 'exists:duties,id'],
+            'form.duty_id' => ['required', 'exists:duties,id'],
             'form.server_id' => ['nullable', 'exists:servers,id'],
             'form.application_id' => ['nullable', 'exists:applications,id'],
             'form.title' => ['required', 'string', 'max:255'],
@@ -185,6 +236,7 @@ class CreateDailyReport extends Component
         ], [
             'form.report_date.required' => 'Tanggal laporan wajib diisi.',
             'form.report_date.date' => 'Format tanggal laporan tidak valid.',
+            'form.duty_id.required' => 'Tupoksi wajib dipilih.',
             'form.duty_id.exists' => 'Tupoksi tidak valid.',
             'form.server_id.exists' => 'Server tidak valid.',
             'form.application_id.exists' => 'Aplikasi tidak valid.',
@@ -195,6 +247,17 @@ class CreateDailyReport extends Component
             'photos.*.image' => 'File harus berupa gambar.',
             'photos.*.max' => 'Ukuran foto maksimal 5 MB per file.',
         ]);
+
+        $employee = $user->employee;
+
+        $isDutyAssignedToEmployee = $employee->duties()
+            ->where('duties.id', $validated['form']['duty_id'])
+            ->exists();
+
+        if (! $isDutyAssignedToEmployee) {
+            $this->addError('form.duty_id', 'Tupoksi tidak tersedia untuk pegawai ini.');
+            return;
+        }
 
         $form = $validated['form'];
 
@@ -210,23 +273,11 @@ class CreateDailyReport extends Component
             }
         }
 
-        if ($this->application_id && $this->server_id) {
-            $applicationBelongsToServer = Application::query()
-                ->where('id', $this->application_id)
-                ->where('server_id', $this->server_id)
-                ->exists();
-
-            if (! $applicationBelongsToServer) {
-                $this->addError('application_id', 'Aplikasi tidak sesuai dengan server yang dipilih.');
-                return;
-            }
-        }
-
         $report = DailyReport::create([
             'user_id' => $user->id,
-            'employee_id' => $user->employee->id,
-            'unit_id' => $user->employee->unit_id,
-            'duty_id' => $form['duty_id'] ?: null,
+            'employee_id' => $employee->id,
+            'unit_id' => $employee->unit_id,
+            'duty_id' => $form['duty_id'],
             'server_id' => $form['server_id'] ?: null,
             'application_id' => $form['application_id'] ?: null,
             'report_date' => $form['report_date'],
@@ -293,9 +344,15 @@ class CreateDailyReport extends Component
             ? Server::query()->find($this->form['server_id'])
             : null;
 
-        $duty = ! empty($this->form['duty_id'])
-            ? Duty::query()->find($this->form['duty_id'])
-            : null;
+        $duty = null;
+
+        if (! empty($this->form['duty_id'])) {
+            $employee = Auth::user()?->employee;
+
+            $duty = $employee?->duties()
+                ->where('duties.id', $this->form['duty_id'])
+                ->first();
+        }
 
         return [
             '{{application_name}}' => $application?->name ?? '-',
@@ -319,13 +376,10 @@ class CreateDailyReport extends Component
         }
 
         return view('livewire.reports.create-daily-report', [
-            'duties' => Duty::query()->orderBy('name')->get(),
+            'duties' => $this->duties,
             'servers' => Server::query()->orderBy('name')->get(),
             'applications' => $applications,
-            'templates' => ReportTemplate::query()
-                ->where('is_active', 1)
-                ->orderBy('title')
-                ->get(),
+            'templates' => $this->templates,
         ])->layout('layouts.app');
     }
 }

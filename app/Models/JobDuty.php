@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
+use App\Models\Employee;
+
 class JobDuty extends Model
 {
     protected $fillable = [
@@ -38,5 +40,12 @@ class JobDuty extends Model
     public function reportTemplates()
     {
         return $this->hasMany(ReportTemplate::class);
+    }
+
+    public function employees()
+    {
+        return $this->belongsToMany(Employee::class, 'employee_duty', 'duty_id', 'employee_id')
+            ->withPivot(['is_primary', 'notes'])
+            ->withTimestamps();
     }
 }
