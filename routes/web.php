@@ -15,6 +15,7 @@ use App\Livewire\Admin\Positions\Index as PositionIndex;
 use App\Livewire\Admin\UserManagement\MissingAccounts;
 use App\Livewire\Admin\UserManagement\Users\Index as UserManagementIndex;
 use App\Livewire\Admin\MasterData\Pegawai\ManageDuties;
+use App\Livewire\Admin\DutyDelegations\Index as DutyDelegationIndex;
 
 use App\Livewire\Kanit\Dashboard as KanitDashboard;
 use App\Livewire\Kanit\ReportMonitoring;
@@ -67,6 +68,9 @@ Route::middleware(['role:admin'])
         Route::get('/master-data/pegawai/{employee}/duties', ManageDuties::class)
             ->name('master-data.pegawai.duties');
 
+        Route::get('/duty-delegations', DutyDelegationIndex::class)
+            ->name('admin.duty-delegations.index');
+
         Route::get('/master-data/server', ServerIndex::class)
             ->name('master-data.server.index');
 
@@ -98,6 +102,9 @@ Route::middleware(['auth', 'kanit'])->prefix('kanit')->name('kanit.')->group(fun
 
     Route::get('/monitoring-laporan/{report}', ReportDetail::class)
         ->name('reports.detail');
+
+    Route::get('/duty-delegations', DutyDelegationIndex::class)
+        ->name('duty-delegations.index');
     });
 
     Route::get('/reports/export/monthly', ExportMonthlyReport::class)

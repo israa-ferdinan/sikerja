@@ -44,7 +44,7 @@
     </x-ui.card>
 
     {{-- Statistik --}}
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         <x-ui.card padding="p-5">
             <div class="flex items-center justify-between gap-4">
                 <div>
@@ -84,6 +84,48 @@
 
             <p class="mt-4 text-xs leading-5 text-slate-500">
                 Total laporan pribadi pada bulan berjalan.
+            </p>
+        </x-ui.card>
+
+        <x-ui.card padding="p-5">
+            <div class="flex items-center justify-between gap-4">
+                <div>
+                    <p class="text-sm font-semibold text-slate-500">
+                        Laporan Normal
+                    </p>
+                    <p class="mt-2 text-3xl font-bold text-slate-900">
+                        {{ number_format($normalReports) }}
+                    </p>
+                </div>
+
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-2xl">
+                    📄
+                </div>
+            </div>
+
+            <p class="mt-4 text-xs leading-5 text-slate-500">
+                Laporan dari tupoksi pribadi bulan ini.
+            </p>
+        </x-ui.card>
+
+        <x-ui.card padding="p-5">
+            <div class="flex items-center justify-between gap-4">
+                <div>
+                    <p class="text-sm font-semibold text-slate-500">
+                        Laporan Delegasi
+                    </p>
+                    <p class="mt-2 text-3xl font-bold text-slate-900">
+                        {{ number_format($delegatedReports) }}
+                    </p>
+                </div>
+
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-50 text-2xl">
+                    🔁
+                </div>
+            </div>
+
+            <p class="mt-4 text-xs leading-5 text-slate-500">
+                Laporan dari tupoksi yang didelegasikan kepada Anda.
             </p>
         </x-ui.card>
 
@@ -134,6 +176,12 @@
             <p class="mt-4 line-clamp-2 text-xs leading-5 text-slate-500">
                 @if ($latestReport)
                     {{ $latestReport->duty?->name ?? 'Laporan kerja terakhir' }}
+
+                    @if ($latestReport->is_delegated)
+                        • Delegasi dari {{ $latestReport->dutyOwnerEmployee?->name ?? '-' }}
+                    @else
+                        • Normal
+                    @endif
                 @else
                     Belum ada laporan yang dibuat.
                 @endif

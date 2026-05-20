@@ -65,7 +65,7 @@
                                 </td>
 
                                 <td class="border-b px-3 py-3">
-                                    {{ $pegawai->positionData?->name ?? '-' }}
+                                    {{ $pegawai->jobPosition?->name ?? '-' }}
                                 </td>
 
                                 <td class="border-b px-3 py-3">
@@ -85,7 +85,7 @@
                                 </td>
 
                                 <td class="border-b px-3 py-3">
-                                    <div class="flex gap-2">
+                                    <div class="flex flex-wrap items-center gap-2">
                                         <button
                                             type="button"
                                             wire:click="openEditModal({{ $pegawai->id }})"
@@ -101,16 +101,17 @@
                                             Hapus
                                         </button>
 
-                                        <a href="{{ route('admin.master-data.pegawai.duties', $pegawai) }}"
-                                        class="inline-flex items-center rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100">
+                                        <a
+                                            href="{{ route('admin.master-data.pegawai.duties', $pegawai) }}"
+                                            class="inline-flex items-center rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                                        >
                                             Kelola Tupoksi
                                         </a>
+
+                                        <span class="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700">
+                                            {{ $pegawai->duties_count ?? 0 }} Tupoksi
+                                        </span>
                                     </div>
-                                </td>
-                                <td>
-                                     <span class="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700">
-                                        {{ $pegawai->duties_count ?? 0 }} Tupoksi
-                                    </span>
                                 </td>
                             </tr>
                         @empty

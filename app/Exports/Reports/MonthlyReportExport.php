@@ -28,12 +28,15 @@ class MonthlyReportExport implements FromCollection, WithHeadings, ShouldAutoSiz
         $reports = DailyReport::query()
             ->with([
                 'employee',
-                'employee.position',
+                'employee.jobPosition',
                 'unit',
                 'duty',
                 'server',
                 'application',
                 'photos',
+                'delegation',
+                'dutyOwnerEmployee',
+                'reportedByEmployee',
             ])
             ->whereMonth('report_date', $this->month)
             ->whereYear('report_date', $this->year)
@@ -51,9 +54,23 @@ class MonthlyReportExport implements FromCollection, WithHeadings, ShouldAutoSiz
                     ? Carbon::parse($report->report_date)->format('d/m/Y')
                     : '-',
                 'nama_pegawai' => $report->employee?->name ?? '-',
-                'jabatan' => $report->employee?->position?->name ?? '-',
+                'jabatan' => $report->employee?->jobPosition?->name ?? '-',
                 'unit' => $report->unit?->name ?? '-',
                 'tupoksi' => $report->duty?->name ?? '-',
+                'jenis_laporan' => $report->is_delegated ? 'Delegasi' : 'Normal',
+                'pemilik_tupoksi' => $report->dutyOwnerEmployee?->name
+                    ?? $report->employee?->name
+                    ?? '-',
+                'dilaporkan_oleh' => $report->reportedByEmployee?->name
+                    ?? $report->employee?->name
+                    ?? '-',
+                'periode_delegasi' => $report->is_delegated
+                    ? (
+                        ($report->delegation?->start_date ? Carbon::parse($report->delegation->start_date)->format('d/m/Y') : '-') .
+                        ' s.d. ' .
+                        ($report->delegation?->end_date ? Carbon::parse($report->delegation->end_date)->format('d/m/Y') : 'Tidak ditentukan')
+                    )
+                    : '-',
                 'server' => $report->server?->name ?? '-',
                 'aplikasi' => $report->application?->name ?? '-',
                 'judul_laporan' => $report->title ?? '-',
@@ -77,6 +94,10 @@ class MonthlyReportExport implements FromCollection, WithHeadings, ShouldAutoSiz
             'Jabatan',
             'Unit',
             'Tupoksi',
+            'Jenis Laporan',
+            'Pemilik Tupoksi',
+            'Dilaporkan Oleh',
+            'Periode Delegasi',
             'Server',
             'Aplikasi',
             'Judul Laporan',
@@ -139,12 +160,11 @@ class MonthlyReportExport implements FromCollection, WithHeadings, ShouldAutoSiz
                     ],
                 ]);
 
-                $sheet->getStyle('J:K')->getAlignment()->setWrapText(true);
+                $sheet->getStyle('N:O')->getAlignment()->setWrapText(true);
 
-                $sheet->getColumnDimension('J')->setWidth(45);
-                $sheet->getColumnDimension('K')->setWidth(45);
-
-                $sheet->getColumnDimension('I')->setWidth(35);
+                $sheet->getColumnDimension('M')->setWidth(35);
+                $sheet->getColumnDimension('N')->setWidth(45);
+                $sheet->getColumnDimension('O')->setWidth(45);
 
                 $sheet->getRowDimension(1)->setRowHeight(24);
             },

@@ -18,7 +18,6 @@ class Index extends Component
     public $unit_id;
     public $name;
     public $nip;
-    public $position;
     public $phone;
     public $is_active = true;
     public ?int $position_id = null;
@@ -33,7 +32,6 @@ class Index extends Component
             'name' => 'required|string|max:150',
             'nip' => 'nullable|string|max:50',
             'position_id' => ['nullable', 'exists:positions,id'],
-            'position' => 'nullable|string|max:150',
             'phone' => 'nullable|string|max:30',
             'is_active' => 'boolean',
         ];
@@ -60,7 +58,6 @@ class Index extends Component
         $this->name = $pegawai->name;
         $this->nip = $pegawai->nip;
         $this->position_id = $pegawai->position_id;
-        $this->position = $pegawai->position;
         $this->phone = $pegawai->phone;
         $this->is_active = (bool) $pegawai->is_active;
 
@@ -79,7 +76,6 @@ class Index extends Component
                 'name' => $this->name,
                 'nip' => $this->nip,
                 'position_id' => $this->position_id,
-                'position' => $this->position,
                 'phone' => $this->phone,
                 'is_active' => $this->is_active,
             ]
@@ -111,7 +107,6 @@ class Index extends Component
             'name',
             'nip',
             'position_id',
-            'position',
             'phone',
             'isEdit',
         ]);
@@ -123,17 +118,16 @@ class Index extends Component
     public function render()
     {
         $pegawais = Employee::query()
-            ->with(['unit', 'position'])
+            ->with(['unit', 'jobPosition', 'duties'])
             ->withCount('duties')
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('name', 'like', '%' . $this->search . '%')
                         ->orWhere('nip', 'like', '%' . $this->search . '%')
-                        ->orWhere('position', 'like', '%' . $this->search . '%')
                         ->orWhereHas('unit', function ($unitQuery) {
                             $unitQuery->where('name', 'like', '%' . $this->search . '%');
                         })
-                        ->orWhereHas('position', function ($positionQuery) {
+                        ->orWhereHas('jobPosition', function ($positionQuery) {
                             $positionQuery->where('name', 'like', '%' . $this->search . '%');
                         });
                 });

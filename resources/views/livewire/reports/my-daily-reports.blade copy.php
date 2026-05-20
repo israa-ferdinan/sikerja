@@ -142,16 +142,6 @@
                                                     </span>
                                                 @endif
 
-                                                @if ($report->is_delegated)
-                                                    <span class="inline-flex items-center rounded-full bg-purple-50 px-2.5 py-1 text-xs font-semibold text-purple-700 ring-1 ring-purple-200">
-                                                        Delegasi
-                                                    </span>
-                                                @else
-                                                    <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
-                                                        Normal
-                                                    </span>
-                                                @endif
-
                                                 @if ($report->application)
                                                     <span class="inline-flex items-center rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 ring-1 ring-violet-200">
                                                         {{ $report->application->name }}
@@ -162,40 +152,6 @@
                                                     <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
                                                         {{ $report->server->name }}
                                                     </span>
-                                                @endif
-                                            </div>
-
-                                            <div class="mt-2 space-y-1 text-xs text-slate-500">
-                                                @if ($report->is_delegated)
-                                                    <div>
-                                                        Pemilik Tupoksi:
-                                                        <span class="font-semibold text-slate-700">
-                                                            {{ $report->dutyOwnerEmployee?->name ?? '-' }}
-                                                        </span>
-                                                    </div>
-
-                                                    <div>
-                                                        Dilaporkan Oleh:
-                                                        <span class="font-semibold text-slate-700">
-                                                            {{ $report->reportedByEmployee?->name ?? $report->employee?->name ?? '-' }}
-                                                        </span>
-                                                    </div>
-
-                                                    @if ($report->delegation)
-                                                        <div class="text-slate-400">
-                                                            Periode:
-                                                            {{ $report->delegation->start_date?->format('d/m/Y') ?? '-' }}
-                                                            s.d.
-                                                            {{ $report->delegation->end_date?->format('d/m/Y') ?? 'Tidak ditentukan' }}
-                                                        </div>
-                                                    @endif
-                                                @else
-                                                    <div>
-                                                        Dilaporkan Oleh:
-                                                        <span class="font-semibold text-slate-700">
-                                                            {{ $report->reportedByEmployee?->name ?? $report->employee?->name ?? '-' }}
-                                                        </span>
-                                                    </div>
                                                 @endif
                                             </div>
 

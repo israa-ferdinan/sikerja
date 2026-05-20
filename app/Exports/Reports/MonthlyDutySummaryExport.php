@@ -44,6 +44,8 @@ class MonthlyDutySummaryExport implements FromCollection, WithHeadings, ShouldAu
                     'no' => $index + 1,
                     'tupoksi' => $firstReport?->duty?->name ?? '-',
                     'total_laporan' => $dutyReports->count(),
+                    'laporan_normal' => $dutyReports->where('is_delegated', false)->count(),
+                    'laporan_delegasi' => $dutyReports->where('is_delegated', true)->count(),
                 ];
             })
             ->sortByDesc('total_laporan')
@@ -56,6 +58,8 @@ class MonthlyDutySummaryExport implements FromCollection, WithHeadings, ShouldAu
             'No',
             'Tupoksi',
             'Total Laporan',
+            'Laporan Normal',
+            'Laporan Delegasi',
         ];
     }
 

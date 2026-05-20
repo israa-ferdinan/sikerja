@@ -90,6 +90,9 @@ class MyDailyReports extends Component
                 'server',
                 'application',
                 'photos',
+                'delegation',
+                'dutyOwnerEmployee',
+                'reportedByEmployee',
             ])
             ->where('employee_id', $user->employee_id)
             ->whereMonth('report_date', $this->month)

@@ -37,7 +37,7 @@ class MonthlyEmployeeSummaryExport implements FromCollection, WithHeadings, Shou
         $reports = DailyReport::query()
             ->with([
                 'employee',
-                'employee.position',
+                'employee.jobPosition',
                 'unit',
                 'photos',
             ])
@@ -58,9 +58,11 @@ class MonthlyEmployeeSummaryExport implements FromCollection, WithHeadings, Shou
                 return [
                     'no' => $index + 1,
                     'nama_pegawai' => $employee?->name ?? '-',
-                    'jabatan' => $employee?->position?->name ?? '-',
+                    'jabatan' => $employee?->jobPosition?->name ?? '-',
                     'unit' => $firstReport?->unit?->name ?? '-',
                     'total_laporan' => $employeeReports->count(),
+                    'laporan_normal' => $employeeReports->where('is_delegated', false)->count(),
+                    'laporan_delegasi' => $employeeReports->where('is_delegated', true)->count(),
                     'total_foto' => $employeeReports->sum(function ($report) {
                         return $report->photos?->count() ?? 0;
                     }),
@@ -76,6 +78,8 @@ class MonthlyEmployeeSummaryExport implements FromCollection, WithHeadings, Shou
             'Jabatan',
             'Unit',
             'Total Laporan',
+            'Laporan Normal',
+            'Laporan Delegasi',
             'Total Foto',
         ];
     }
@@ -136,6 +140,30 @@ class MonthlyEmployeeSummaryExport implements FromCollection, WithHeadings, Shou
             ->sum('photos_count');
     }
 
+    private function totalNormalReports(): int
+    {
+        return DailyReport::query()
+            ->whereMonth('report_date', $this->month)
+            ->whereYear('report_date', $this->year)
+            ->where('is_delegated', false)
+            ->when($this->unitId, function ($query) {
+                $query->where('unit_id', $this->unitId);
+            })
+            ->count();
+    }
+
+    private function totalDelegatedReports(): int
+    {
+        return DailyReport::query()
+            ->whereMonth('report_date', $this->month)
+            ->whereYear('report_date', $this->year)
+            ->where('is_delegated', true)
+            ->when($this->unitId, function ($query) {
+                $query->where('unit_id', $this->unitId);
+            })
+            ->count();
+    }
+
     public function registerEvents(): array
     {
         return [
@@ -149,7 +177,7 @@ class MonthlyEmployeeSummaryExport implements FromCollection, WithHeadings, Shou
                 $tableRange = 'A' . $tableStartRow . ':' . $highestColumn . $highestRow;
                 $headerRange = 'A' . $tableStartRow . ':' . $highestColumn . $tableStartRow;
 
-                $sheet->mergeCells('A1:F1');
+                $sheet->mergeCells('A1:H1');
                 $sheet->setCellValue('A1', 'REKAP LAPORAN KERJA BULANAN');
 
                 $sheet->setCellValue('A3', 'Periode');
@@ -164,13 +192,19 @@ class MonthlyEmployeeSummaryExport implements FromCollection, WithHeadings, Shou
                 $sheet->setCellValue('A6', 'Total Foto');
                 $sheet->setCellValue('B6', ': ' . $this->totalPhotos());
 
+                $sheet->setCellValue('D5', 'Laporan Normal');
+                $sheet->setCellValue('E5', ': ' . $this->totalNormalReports());
+
+                $sheet->setCellValue('D6', 'Laporan Delegasi');
+                $sheet->setCellValue('E6', ': ' . $this->totalDelegatedReports());
+
                 $sheet->setCellValue('A7', 'Dicetak Oleh');
                 $sheet->setCellValue('B7', ': ' . ($this->printedBy ?? '-'));
 
                 $sheet->setCellValue('A8', 'Tanggal Cetak');
                 $sheet->setCellValue('B8', ': ' . Carbon::now()->format('d/m/Y H:i'));
 
-                $sheet->getStyle('A1:F1')->applyFromArray([
+                $sheet->getStyle('A1:H1')->applyFromArray([
                     'font' => [
                         'bold' => true,
                         'size' => 14,
@@ -182,6 +216,12 @@ class MonthlyEmployeeSummaryExport implements FromCollection, WithHeadings, Shou
                 ]);
 
                 $sheet->getStyle('A3:A8')->applyFromArray([
+                    'font' => [
+                        'bold' => true,
+                    ],
+                ]);
+
+                $sheet->getStyle('D5:D6')->applyFromArray([
                     'font' => [
                         'bold' => true,
                     ],

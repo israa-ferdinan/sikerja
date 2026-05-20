@@ -129,34 +129,42 @@
                         </label>
 
                         <select
-                            wire:model.change="form.duty_id"
-                            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                            @disabled($duties->isEmpty())                       
-                            >  
-                            <option value="">
-                                {{ $duties->isEmpty() ? 'Belum ada tupoksi yang ditugaskan' : 'Pilih Tupoksi' }}
-                            </option>
+                            wire:model.live="selected_duty"
+                            class="w-full rounded-xl border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                        >
+                            <option value="">Pilih Tupoksi</option>
 
-                            @foreach ($duties as $duty)
-                                <option value="{{ $duty->id }}">
-                                    {{ $duty->name }}
-                                </option>
-                            @endforeach
+                            @if (count($personalDuties) > 0)
+                                <optgroup label="Tupoksi Pribadi">
+                                    @foreach ($personalDuties as $duty)
+                                        <option value="personal:{{ $duty['id'] }}">
+                                            {{ $duty['name'] }}
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
+
+                            @if (count($delegatedDuties) > 0)
+                                <optgroup label="Tupoksi Delegasi">
+                                    @foreach ($delegatedDuties as $delegation)
+                                        <option value="delegation:{{ $delegation['id'] }}">
+                                            {{ $delegation['duty_name'] }} — dari {{ $delegation['owner_name'] }}
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
                         </select>
 
-                        @if ($duties->isEmpty())
-                            <p class="mt-2 rounded-lg bg-yellow-50 px-3 py-2 text-sm text-yellow-700">
-                                Belum ada tupoksi yang ditugaskan ke akun Anda. Silakan hubungi admin.
-                            </p>
+                        @error('selected_duty')
+                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                        @enderror
+                        
+                        @if (count($personalDuties) === 0 && count($delegatedDuties) === 0)
+                            <div class="mt-3 rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+                                Belum ada tupoksi pribadi atau tupoksi delegasi aktif untuk Anda pada tanggal laporan ini.
+                                Silakan hubungi Admin atau Kanit.
+                            </div>
                         @endif
-
-                        @error('duty_id')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-
-                        @error('form.duty_id')
-                            <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
                     </div>
 
                     <div>

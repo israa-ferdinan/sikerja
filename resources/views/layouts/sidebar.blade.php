@@ -48,20 +48,6 @@
                 </x-sidebar-link>
 
                 <x-sidebar-link
-                    :href="route('admin.user-management.missing-accounts')"
-                    :active="request()->routeIs('admin.user-management.missing-accounts.*')"
-                >
-                    Aktivasi Akun
-                </x-sidebar-link>
-
-                <x-sidebar-link
-                    :href="route('admin.user-management.users.index')"
-                    :active="request()->routeIs('admin.user-management.users.index.*')"
-                >
-                    Managemen User
-                </x-sidebar-link>
-
-                <x-sidebar-link
                     :href="route('admin.master-data.tupoksi.index')"
                     :active="request()->routeIs('admin.master-data.tupoksi.*')"
                 >
@@ -82,6 +68,32 @@
                     Master Aplikasi
                 </x-sidebar-link>
 
+                <div class="pt-4 pb-1">
+                    <p class="px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                        User
+                    </p>
+                </div>
+
+                <x-sidebar-link
+                    :href="route('admin.user-management.missing-accounts')"
+                    :active="request()->routeIs('admin.user-management.missing-accounts.*')"
+                >
+                    Aktivasi Akun
+                </x-sidebar-link>
+
+                <x-sidebar-link
+                    :href="route('admin.user-management.users.index')"
+                    :active="request()->routeIs('admin.user-management.users.index.*')"
+                >
+                    Managemen User
+                </x-sidebar-link>
+
+                <div class="pt-4 pb-1">
+                    <p class="px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                        Tupoksi
+                    </p>
+                </div>
+
                 <x-sidebar-link
                     :href="route('admin.master-data.report-template.index')"
                     :active="request()->routeIs('admin.master-data.report-template.*')"
@@ -94,6 +106,13 @@
                     :active="request()->routeIs('reports.export.monthly.*')"
                 >
                     Rekap & Export
+                </x-sidebar-link>
+
+                <x-sidebar-link
+                    :href="route('admin.admin.duty-delegations.index')"
+                    :active="request()->routeIs('admin.admin.duty-delegations.index.*')"
+                >
+                    Delegasi Tupoksi
                 </x-sidebar-link>
                 
             @endif
@@ -117,6 +136,13 @@
                     :active="request()->routeIs('kanit.reports.*')"
                 >
                     Monitoring Laporan Unit
+                </x-sidebar-link>
+
+                <x-sidebar-link
+                    :href="route('kanit.duty-delegations.index')"
+                    :active="request()->routeIs('kanit.duty-delegations.index.*')"
+                >
+                    Delegasi Tupoksi
                 </x-sidebar-link>
 
                 <x-sidebar-link

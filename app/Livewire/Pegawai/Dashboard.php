@@ -13,6 +13,10 @@ class Dashboard extends Component
 
     public int $monthlyReports = 0;
 
+    public int $normalReports = 0;
+
+    public int $delegatedReports = 0;
+
     public int $totalPhotos = 0;
 
     public ?DailyReport $latestReport = null;
@@ -21,6 +25,25 @@ class Dashboard extends Component
     {
         $user = Auth::user();
 
+        $employeeId = $user->employee_id;
+
+        $employeeReportScope = function ($query) use ($user, $employeeId) {
+            if ($employeeId) {
+                $query->where(function ($q) use ($employeeId, $user) {
+                    $q->where('reported_by_employee_id', $employeeId)
+                        ->orWhere(function ($fallback) use ($employeeId, $user) {
+                            $fallback->whereNull('reported_by_employee_id')
+                                ->where(function ($old) use ($employeeId, $user) {
+                                    $old->where('employee_id', $employeeId)
+                                        ->orWhere('user_id', $user->id);
+                                });
+                        });
+                });
+            } else {
+                $query->where('user_id', $user->id);
+            }
+        };
+
         $today = today()->toDateString();
 
         $startOfMonth = now()->startOfMonth()->toDateString();
@@ -28,18 +51,30 @@ class Dashboard extends Component
         $endOfMonth = now()->endOfMonth()->toDateString();
 
         $this->todayReports = DailyReport::query()
-            ->where('user_id', $user->id)
+            ->where($employeeReportScope)
             ->whereDate('report_date', $today)
             ->count();
 
         $this->monthlyReports = DailyReport::query()
-            ->where('user_id', $user->id)
+            ->where($employeeReportScope)
             ->whereBetween('report_date', [$startOfMonth, $endOfMonth])
             ->count();
 
+        $this->normalReports = DailyReport::query()
+            ->where($employeeReportScope)
+            ->whereBetween('report_date', [$startOfMonth, $endOfMonth])
+            ->where('is_delegated', false)
+            ->count();
+
+        $this->delegatedReports = DailyReport::query()
+            ->where($employeeReportScope)
+            ->whereBetween('report_date', [$startOfMonth, $endOfMonth])
+            ->where('is_delegated', true)
+            ->count();
+
         $this->totalPhotos = DailyReportPhoto::query()
-            ->whereHas('dailyReport', function ($query) use ($user) {
-                $query->where('user_id', $user->id);
+            ->whereHas('dailyReport', function ($query) use ($employeeReportScope) {
+                $query->where($employeeReportScope);
             })
             ->count();
 
@@ -48,8 +83,10 @@ class Dashboard extends Component
                 'duty:id,name',
                 'server:id,name',
                 'application:id,name',
+                'dutyOwnerEmployee:id,name',
+                'reportedByEmployee:id,name',
             ])
-            ->where('user_id', $user->id)
+            ->where($employeeReportScope)
             ->latest('report_date')
             ->latest('id')
             ->first();

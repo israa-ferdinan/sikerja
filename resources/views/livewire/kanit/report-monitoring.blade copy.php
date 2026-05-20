@@ -393,7 +393,7 @@
                                             {{ $report->employee->name ?? '-' }}
                                         </div>
                                         <div class="mt-1 text-xs text-slate-500">
-                                            {{ $report->employee?->jobPosition?->name ?? $report->employee?->position ?? '-' }}
+                                            {{ $report->employee->position ?? '-' }}
                                         </div>
                                     </td>
 
@@ -417,41 +417,12 @@
                                     </td>
 
                                     <td class="px-5 py-4 align-top">
-                                        <div class="flex flex-wrap items-center gap-2">
-                                            @if($report->duty)
-                                                <x-ui.badge variant="primary">
-                                                    {{ $report->duty->name }}
-                                                </x-ui.badge>
-                                            @else
-                                                <span class="text-sm text-slate-400">-</span>
-                                            @endif
-
-                                            @if ($report->is_delegated)
-                                                <span class="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700">
-                                                    Delegasi
-                                                </span>
-                                            @else
-                                                <span class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
-                                                    Normal
-                                                </span>
-                                            @endif
-                                        </div>
-
-                                        @if ($report->is_delegated)
-                                            <div class="mt-2 space-y-1 text-xs text-slate-500">
-                                                <div>
-                                                    Pemilik:
-                                                    <span class="font-semibold text-slate-700">
-                                                        {{ $report->dutyOwnerEmployee?->name ?? '-' }}
-                                                    </span>
-                                                </div>
-                                                <div>
-                                                    Pelapor:
-                                                    <span class="font-semibold text-slate-700">
-                                                        {{ $report->reportedByEmployee?->name ?? $report->employee?->name ?? '-' }}
-                                                    </span>
-                                                </div>
-                                            </div>
+                                        @if($report->duty)
+                                            <x-ui.badge variant="primary">
+                                                {{ $report->duty->name }}
+                                            </x-ui.badge>
+                                        @else
+                                            <span class="text-sm text-slate-400">-</span>
                                         @endif
                                     </td>
 
@@ -479,6 +450,29 @@
                                         </a>
                                     </td>
 
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="font-medium text-gray-900">
+                                            {{ $report->duty?->name ?? '-' }}
+                                        </span>
+
+                                        @if ($report->is_delegated)
+                                            <span class="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700">
+                                                Delegasi
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                                                Normal
+                                            </span>
+                                        @endif
+                                    </div>
+
+                                    @if ($report->is_delegated)
+                                        <div class="mt-1 text-xs text-gray-500">
+                                            Pemilik: {{ $report->dutyOwnerEmployee?->name ?? '-' }}
+                                            <span class="mx-1">•</span>
+                                            Pelapor: {{ $report->reportedByEmployee?->name ?? '-' }}
+                                        </div>
+                                    @endif
                                 </tr>
                             @endforeach
                         </tbody>

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use App\Models\Position;
 use App\Models\User;
 use App\Models\JobDuty;
+use App\Models\DutyDelegation;
 
 class Employee extends Model
 {
@@ -50,10 +51,25 @@ class Employee extends Model
         return $this->belongsTo(Position::class, 'position_id');
     }
 
+    public function jobPosition()
+    {
+        return $this->belongsTo(Position::class, 'position_id');
+    }
+
     public function duties()
     {
         return $this->belongsToMany(JobDuty::class, 'employee_duty', 'employee_id', 'duty_id')
             ->withPivot(['is_primary', 'notes'])
             ->withTimestamps();
+    }
+
+    public function ownedDutyDelegations()
+    {
+        return $this->hasMany(DutyDelegation::class, 'owner_employee_id');
+    }
+
+    public function receivedDutyDelegations()
+    {
+        return $this->hasMany(DutyDelegation::class, 'delegate_employee_id');
     }
 }

@@ -35,7 +35,7 @@
                 <p class="mt-2 text-sm leading-6 text-slate-500">
                     Dibuat oleh
                     <span class="font-semibold text-slate-700">
-                        {{ $report->employee->name ?? '-' }}
+                        {{ $report->reportedByEmployee?->name ?? $report->employee?->name ?? '-' }}
                     </span>
                     pada
                     <span class="font-semibold text-slate-700">
@@ -84,9 +84,18 @@
                                 <div>
                                     Dilaporkan Oleh:
                                     <span class="font-medium text-gray-900">
-                                        {{ $report->reportedByEmployee?->name ?? '-' }}
+                                        {{ $report->reportedByEmployee?->name ?? $report->employee?->name ?? '-' }}
                                     </span>
                                 </div>
+
+                                @if ($report->delegation)
+                                    <div class="text-xs text-gray-500">
+                                        Periode:
+                                        {{ $report->delegation->start_date?->format('d/m/Y') ?? '-' }}
+                                        s.d.
+                                        {{ $report->delegation->end_date?->format('d/m/Y') ?? 'Tidak ditentukan' }}
+                                    </div>
+                                @endif
                             </div>
                         @else
                             <span class="inline-flex rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
@@ -209,7 +218,7 @@
                             Nama Pegawai
                         </div>
                         <div class="mt-1 text-sm font-semibold text-slate-900">
-                            {{ $report->employee->name ?? '-' }}
+                            {{ $report->reportedByEmployee?->name ?? $report->employee?->name ?? '-' }}
                         </div>
                     </div>
 
@@ -218,7 +227,7 @@
                             Jabatan
                         </div>
                         <div class="mt-1 text-sm text-slate-700">
-                            {{ $report->employee->position ?? '-' }}
+                            {{ $report->reportedByEmployee?->jobPosition?->name ?? $report->employee?->jobPosition?->name ?? $report->employee?->position ?? '-' }}
                         </div>
                     </div>
 
@@ -227,7 +236,7 @@
                             Unit
                         </div>
                         <div class="mt-1 text-sm text-slate-700">
-                            {{ $report->employee->unit->name ?? '-' }}
+                            {{ $report->reportedByEmployee?->unit?->name ?? $report->employee?->unit?->name ?? '-' }}
                         </div>
                     </div>
                 </div>
@@ -258,7 +267,7 @@
                         <div class="text-xs font-bold uppercase tracking-wide text-slate-400">
                             Tupoksi
                         </div>
-                        <div class="mt-1">
+                        <div class="mt-1 flex flex-wrap items-center gap-2">
                             @if($report->duty)
                                 <x-ui.badge variant="primary">
                                     {{ $report->duty->name }}
@@ -266,7 +275,34 @@
                             @else
                                 <span class="text-sm text-slate-500">-</span>
                             @endif
+
+                            @if ($report->is_delegated)
+                                <span class="inline-flex rounded-full bg-purple-100 px-2.5 py-1 text-xs font-semibold text-purple-700">
+                                    Delegasi
+                                </span>
+                            @else
+                                <span class="inline-flex rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                                    Normal
+                                </span>
+                            @endif
                         </div>
+
+                        @if ($report->is_delegated)
+                            <div class="mt-2 space-y-1 text-xs text-slate-500">
+                                <div>
+                                    Pemilik Tupoksi:
+                                    <span class="font-semibold text-slate-700">
+                                        {{ $report->dutyOwnerEmployee?->name ?? '-' }}
+                                    </span>
+                                </div>
+                                <div>
+                                    Dilaporkan Oleh:
+                                    <span class="font-semibold text-slate-700">
+                                        {{ $report->reportedByEmployee?->name ?? $report->employee?->name ?? '-' }}
+                                    </span>
+                                </div>
+                            </div>
+                        @endif
                     </div>
 
                     <div>

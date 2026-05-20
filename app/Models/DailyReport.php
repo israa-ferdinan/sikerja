@@ -11,6 +11,7 @@ use App\Models\JobDuty;
 use App\Models\Server;
 use App\Models\Application;
 use App\Models\DailyReportPhoto;
+use App\Models\DutyDelegation;
 
 class DailyReport extends Model
 {
@@ -28,10 +29,15 @@ class DailyReport extends Model
         'description',
         'notes',
         'status',
+        'is_delegated',
+        'delegation_id',
+        'duty_owner_employee_id',
+        'reported_by_employee_id',
     ];
 
     protected $casts = [
         'report_date' => 'date',
+        'is_delegated' => 'boolean',
     ];
 
     public function user()
@@ -67,5 +73,20 @@ class DailyReport extends Model
     public function photos()
     {
         return $this->hasMany(DailyReportPhoto::class);
+    }
+
+    public function delegation()
+    {
+        return $this->belongsTo(DutyDelegation::class, 'delegation_id');
+    }
+
+    public function dutyOwnerEmployee()
+    {
+        return $this->belongsTo(Employee::class, 'duty_owner_employee_id');
+    }
+
+    public function reportedByEmployee()
+    {
+        return $this->belongsTo(Employee::class, 'reported_by_employee_id');
     }
 }

@@ -44,7 +44,7 @@
     </x-ui.card>
 
     {{-- Statistik --}}
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         <x-ui.card padding="p-5">
             <div class="flex items-center justify-between gap-4">
                 <div>
@@ -84,6 +84,48 @@
 
             <p class="mt-4 text-xs leading-5 text-slate-500">
                 Total laporan pegawai unit pada bulan berjalan.
+            </p>
+        </x-ui.card>
+
+        <x-ui.card padding="p-5">
+            <div class="flex items-center justify-between gap-4">
+                <div>
+                    <p class="text-sm font-semibold text-slate-500">
+                        Laporan Normal
+                    </p>
+                    <p class="mt-2 text-3xl font-bold text-slate-900">
+                        {{ number_format($normalReports) }}
+                    </p>
+                </div>
+
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-2xl">
+                    📄
+                </div>
+            </div>
+
+            <p class="mt-4 text-xs leading-5 text-slate-500">
+                Laporan tupoksi pribadi pegawai unit bulan ini.
+            </p>
+        </x-ui.card>
+
+        <x-ui.card padding="p-5">
+            <div class="flex items-center justify-between gap-4">
+                <div>
+                    <p class="text-sm font-semibold text-slate-500">
+                        Laporan Delegasi
+                    </p>
+                    <p class="mt-2 text-3xl font-bold text-slate-900">
+                        {{ number_format($delegatedReports) }}
+                    </p>
+                </div>
+
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-50 text-2xl">
+                    🔁
+                </div>
+            </div>
+
+            <p class="mt-4 text-xs leading-5 text-slate-500">
+                Laporan unit yang berasal dari tupoksi delegasi.
             </p>
         </x-ui.card>
 

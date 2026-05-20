@@ -21,11 +21,16 @@ class Dashboard extends Component
 
     public int $monthlyReports = 0;
 
+    public int $normalReports = 0;
+
+    public int $delegatedReports = 0;
+
     public int $totalServers = 0;
 
     public int $totalApplications = 0;
 
     public int $totalTemplates = 0;
+
 
     public function mount(): void
     {
@@ -40,6 +45,16 @@ class Dashboard extends Component
 
         $this->monthlyReports = DailyReport::query()
             ->whereBetween('report_date', [$startOfMonth, $endOfMonth])
+            ->count();
+
+        $this->normalReports = DailyReport::query()
+            ->whereBetween('report_date', [$startOfMonth, $endOfMonth])
+            ->where('is_delegated', false)
+            ->count();
+
+        $this->delegatedReports = DailyReport::query()
+            ->whereBetween('report_date', [$startOfMonth, $endOfMonth])
+            ->where('is_delegated', true)
             ->count();
 
         $this->totalServers = Server::query()->count();

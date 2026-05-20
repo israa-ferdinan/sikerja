@@ -33,6 +33,9 @@ class MonthlyPhotoDataExport implements FromCollection, WithHeadings, ShouldAuto
                 'dailyReport.employee',
                 'dailyReport.unit',
                 'dailyReport.duty',
+                'dailyReport.delegation',
+                'dailyReport.dutyOwnerEmployee',
+                'dailyReport.reportedByEmployee',
             ])
             ->whereHas('dailyReport', function ($query) {
                 $query
@@ -57,6 +60,13 @@ class MonthlyPhotoDataExport implements FromCollection, WithHeadings, ShouldAuto
                 'nama_pegawai' => $report?->employee?->name ?? '-',
                 'unit' => $report?->unit?->name ?? '-',
                 'tupoksi' => $report?->duty?->name ?? '-',
+                'jenis_laporan' => $report?->is_delegated ? 'Delegasi' : 'Normal',
+                'pemilik_tupoksi' => $report?->dutyOwnerEmployee?->name
+                    ?? $report?->employee?->name
+                    ?? '-',
+                'dilaporkan_oleh' => $report?->reportedByEmployee?->name
+                    ?? $report?->employee?->name
+                    ?? '-',
                 'judul_laporan' => $report?->title ?? '-',
                 'nama_file' => basename($photo->file_path),
                 'path_storage' => $photo->file_path ?? '-',
@@ -76,6 +86,9 @@ class MonthlyPhotoDataExport implements FromCollection, WithHeadings, ShouldAuto
             'Nama Pegawai',
             'Unit',
             'Tupoksi',
+            'Jenis Laporan',
+            'Pemilik Tupoksi',
+            'Dilaporkan Oleh',
             'Judul Laporan',
             'Nama File',
             'Path Storage',
@@ -135,11 +148,11 @@ class MonthlyPhotoDataExport implements FromCollection, WithHeadings, ShouldAuto
                     ],
                 ]);
 
-                $sheet->getStyle('H:I')->getAlignment()->setWrapText(true);
+                $sheet->getStyle('I:L')->getAlignment()->setWrapText(true);
 
-                $sheet->getColumnDimension('F')->setWidth(35);
-                $sheet->getColumnDimension('H')->setWidth(45);
-                $sheet->getColumnDimension('I')->setWidth(55);
+                $sheet->getColumnDimension('I')->setWidth(35);
+                $sheet->getColumnDimension('K')->setWidth(45);
+                $sheet->getColumnDimension('L')->setWidth(55);
 
                 $sheet->getRowDimension(1)->setRowHeight(24);
             },

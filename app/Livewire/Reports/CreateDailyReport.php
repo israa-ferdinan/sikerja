@@ -5,12 +5,14 @@ namespace App\Livewire\Reports;
 use App\Models\Application;
 use App\Models\DailyReport;
 use App\Models\DailyReportPhoto;
-use App\Models\Duty;
+use App\Models\JobDuty;
+use App\Models\DutyDelegation;
 use App\Models\ReportTemplate;
 use App\Models\Server;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
 use Livewire\Component;
@@ -41,6 +43,12 @@ class CreateDailyReport extends Component
     public $templates = [];
     public $duties = [];
 
+    public $personalDuties = [];
+    public $delegatedDuties = [];
+    public $selectedDutyType = 'personal';
+    public $selectedDelegationId = null;
+    public $selected_duty = null;
+
     public function mount()
     {
         $user = Auth::user();
@@ -65,6 +73,11 @@ class CreateDailyReport extends Component
             ->where('is_active', 1)
             ->orderBy('title')
             ->get();
+
+        $this->personalDuties = [];
+        $this->delegatedDuties = [];
+
+        $this->loadAvailableDuties();
     }
 
     private function loadEmployeeDuties(): void
@@ -87,7 +100,7 @@ class CreateDailyReport extends Component
         $this->form['application_id'] = '';
     }
 
-    public function updatedFormDutyId($value): void
+    /* public function updatedFormDutyId($value): void
     {
         if (empty($value)) {
             return;
@@ -110,7 +123,7 @@ class CreateDailyReport extends Component
             $this->addError('form.duty_id', 'Tupoksi tidak tersedia untuk pegawai ini.');
             return;
         }
-    }
+    } */
 
     public function updatedFormTemplateId($value): void
     {
@@ -222,9 +235,9 @@ class CreateDailyReport extends Component
             abort(403, 'Data pegawai belum memiliki unit kerja.');
         }
 
-        $validated = $this->validate([
+       $validated = $this->validate([
             'form.report_date' => ['required', 'date'],
-            'form.duty_id' => ['required', 'exists:duties,id'],
+            'selected_duty' => ['required', 'string'],
             'form.server_id' => ['nullable', 'exists:servers,id'],
             'form.application_id' => ['nullable', 'exists:applications,id'],
             'form.title' => ['required', 'string', 'max:255'],
@@ -236,8 +249,7 @@ class CreateDailyReport extends Component
         ], [
             'form.report_date.required' => 'Tanggal laporan wajib diisi.',
             'form.report_date.date' => 'Format tanggal laporan tidak valid.',
-            'form.duty_id.required' => 'Tupoksi wajib dipilih.',
-            'form.duty_id.exists' => 'Tupoksi tidak valid.',
+            'selected_duty.required' => 'Tupoksi wajib dipilih.',
             'form.server_id.exists' => 'Server tidak valid.',
             'form.application_id.exists' => 'Aplikasi tidak valid.',
             'form.title.required' => 'Judul kegiatan wajib diisi.',
@@ -248,17 +260,14 @@ class CreateDailyReport extends Component
             'photos.*.max' => 'Ukuran foto maksimal 5 MB per file.',
         ]);
 
-        $employee = $user->employee;
+        $resolvedDuty = $this->resolveSelectedDutyForSave();
 
-        $isDutyAssignedToEmployee = $employee->duties()
-            ->where('duties.id', $validated['form']['duty_id'])
-            ->exists();
-
-        if (! $isDutyAssignedToEmployee) {
-            $this->addError('form.duty_id', 'Tupoksi tidak tersedia untuk pegawai ini.');
+        if (!$resolvedDuty) {
+            $this->addError('selected_duty', 'Tupoksi tidak valid atau delegasi tidak aktif pada tanggal laporan.');
             return;
         }
 
+        $employee = $user->employee;
         $form = $validated['form'];
 
         if (! empty($form['application_id']) && ! empty($form['server_id'])) {
@@ -277,7 +286,13 @@ class CreateDailyReport extends Component
             'user_id' => $user->id,
             'employee_id' => $employee->id,
             'unit_id' => $employee->unit_id,
-            'duty_id' => $form['duty_id'],
+
+            'duty_id' => $resolvedDuty['duty_id'],
+            'is_delegated' => $resolvedDuty['is_delegated'],
+            'delegation_id' => $resolvedDuty['delegation_id'],
+            'duty_owner_employee_id' => $resolvedDuty['duty_owner_employee_id'],
+            'reported_by_employee_id' => $resolvedDuty['reported_by_employee_id'],
+
             'server_id' => $form['server_id'] ?: null,
             'application_id' => $form['application_id'] ?: null,
             'report_date' => $form['report_date'],
@@ -381,5 +396,167 @@ class CreateDailyReport extends Component
             'applications' => $applications,
             'templates' => $this->templates,
         ])->layout('layouts.app');
+    }
+
+    private function loadAvailableDuties(): void
+    {
+        $employee = auth()->user()->employee;
+
+        if (!$employee) {
+            $this->personalDuties = [];
+            $this->delegatedDuties = [];
+            return;
+        }
+
+        $reportDate = $this->getCurrentReportDate();
+
+        $personalDutyIds = DB::table('employee_duty')
+            ->where('employee_id', $employee->id)
+            ->pluck('duty_id')
+            ->toArray();
+
+        $this->personalDuties = JobDuty::query()
+            ->whereIn('id', $personalDutyIds)
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn ($duty) => [
+                'id' => $duty->id,
+                'name' => $duty->name,
+            ])
+            ->toArray();
+
+        $this->delegatedDuties = DutyDelegation::query()
+            ->with(['duty:id,name', 'ownerEmployee:id,name'])
+            ->where('delegate_employee_id', $employee->id)
+            ->where('is_active', true)
+            ->whereDate('start_date', '<=', $reportDate)
+            ->where(function ($query) use ($reportDate) {
+                $query->whereNull('end_date')
+                    ->orWhereDate('end_date', '>=', $reportDate);
+            })
+            ->orderBy('start_date', 'desc')
+            ->get()
+            ->map(fn ($delegation) => [
+                'id' => $delegation->id,
+                'duty_id' => $delegation->duty_id,
+                'duty_name' => $delegation->duty?->name ?? '-',
+                'owner_employee_id' => $delegation->owner_employee_id,
+                'owner_name' => $delegation->ownerEmployee?->name ?? '-',
+                'start_date' => optional($delegation->start_date)->format('Y-m-d'),
+                'end_date' => optional($delegation->end_date)->format('Y-m-d'),
+            ])
+            ->toArray();
+    }
+
+    /* public function updatedReportDate()
+    {
+        $this->duty_id = null;
+        $this->selectedDutyType = 'personal';
+        $this->selectedDelegationId = null;
+
+        $this->loadAvailableDuties();
+    } */
+
+    private function parseSelectedDuty(): array
+    {
+        if (!$this->selected_duty || !str_contains($this->selected_duty, ':')) {
+            return [
+                'type' => null,
+                'id' => null,
+            ];
+        }
+
+        [$type, $id] = explode(':', $this->selected_duty, 2);
+
+        return [
+            'type' => $type,
+            'id' => (int) $id,
+        ];
+    }
+
+    private function getCurrentReportDate(): string
+    {
+        if (!empty($this->form['report_date'])) {
+            return $this->form['report_date'];
+        }
+
+        return now()->toDateString();
+    }
+
+    private function resolveSelectedDutyForSave(): ?array
+    {
+        $employee = auth()->user()->employee;
+
+        if (!$employee) {
+            return null;
+        }
+
+        $selected = $this->parseSelectedDuty();
+
+        if (!$selected['type'] || !$selected['id']) {
+            return null;
+        }
+
+        $reportDate = $this->getCurrentReportDate();
+
+        if ($selected['type'] === 'personal') {
+            $hasDuty = DB::table('employee_duty')
+                ->where('employee_id', $employee->id)
+                ->where('duty_id', $selected['id'])
+                ->exists();
+
+            if (!$hasDuty) {
+                return null;
+            }
+
+            return [
+                'duty_id' => $selected['id'],
+                'is_delegated' => false,
+                'delegation_id' => null,
+                'duty_owner_employee_id' => $employee->id,
+                'reported_by_employee_id' => $employee->id,
+            ];
+        }
+
+        if ($selected['type'] === 'delegation') {
+            $delegation = DutyDelegation::query()
+                ->where('id', $selected['id'])
+                ->where('delegate_employee_id', $employee->id)
+                ->where('is_active', true)
+                ->whereDate('start_date', '<=', $reportDate)
+                ->where(function ($query) use ($reportDate) {
+                    $query->whereNull('end_date')
+                        ->orWhereDate('end_date', '>=', $reportDate);
+                })
+                ->first();
+
+            if (!$delegation) {
+                return null;
+            }
+
+            return [
+                'duty_id' => $delegation->duty_id,
+                'is_delegated' => true,
+                'delegation_id' => $delegation->id,
+                'duty_owner_employee_id' => $delegation->owner_employee_id,
+                'reported_by_employee_id' => $employee->id,
+            ];
+        }
+
+        return null;
+    }
+
+    public function updated($property, $value): void
+    {
+        if (in_array($property, ['report_date', 'reportDate', 'date'])) {
+            $this->duty_id = null;
+            $this->loadAvailableDuties();
+        }
+    }
+
+    public function updatedFormReportDate(): void
+    {
+        $this->selected_duty = null;
+        $this->loadAvailableDuties();
     }
 }

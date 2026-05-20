@@ -155,6 +155,9 @@ class ReportMonitoring extends Component
                 'server',
                 'application',
                 'photos',
+                'delegation',
+                'dutyOwnerEmployee',
+                'reportedByEmployee',
             ])
             ->where('unit_id', $unitId)
             ->whereMonth('report_date', (int) $this->month)

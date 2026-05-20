@@ -13,6 +13,10 @@ class Dashboard extends Component
 
     public int $monthlyReports = 0;
 
+    public int $normalReports = 0;
+
+    public int $delegatedReports = 0;
+
     public int $unitEmployees = 0;
 
     public int $employeesReportedThisMonth = 0;
@@ -49,16 +53,31 @@ class Dashboard extends Component
             ->whereBetween('report_date', [$startOfMonth, $endOfMonth])
             ->count();
 
+        $this->normalReports = DailyReport::query()
+            ->where('unit_id', $unitId)
+            ->whereBetween('report_date', [$startOfMonth, $endOfMonth])
+            ->where('is_delegated', false)
+            ->count();
+
+        $this->delegatedReports = DailyReport::query()
+            ->where('unit_id', $unitId)
+            ->whereBetween('report_date', [$startOfMonth, $endOfMonth])
+            ->where('is_delegated', true)
+            ->count();    
+
         $this->unitEmployees = Employee::query()
             ->where('unit_id', $unitId)
             ->count();
 
-        $this->employeesReportedThisMonth = DailyReport::query()
+        $reportedEmployeeIds = DailyReport::query()
             ->where('unit_id', $unitId)
             ->whereBetween('report_date', [$startOfMonth, $endOfMonth])
-            ->whereNotNull('employee_id')
-            ->distinct('employee_id')
-            ->count('employee_id');
+            ->get(['employee_id', 'reported_by_employee_id'])
+            ->map(fn ($report) => $report->reported_by_employee_id ?: $report->employee_id)
+            ->filter()
+            ->unique();
+
+        $this->employeesReportedThisMonth = $reportedEmployeeIds->count();
 
         $this->employeesNotReportedThisMonth = max(
             $this->unitEmployees - $this->employeesReportedThisMonth,

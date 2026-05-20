@@ -31,6 +31,9 @@ class KanitMonthlyReportsExport implements FromCollection, WithHeadings, WithMap
                 'server',
                 'application',
                 'photos',
+                'delegation',
+                'dutyOwnerEmployee',
+                'reportedByEmployee',
             ])
             ->whereHas('employee', function ($query) {
                 $query->where('unit_id', $this->unitId);
@@ -51,6 +54,10 @@ class KanitMonthlyReportsExport implements FromCollection, WithHeadings, WithMap
             'Jabatan',
             'Unit',
             'Tupoksi',
+            'Jenis Laporan',
+            'Pemilik Tupoksi',
+            'Dilaporkan Oleh',
+            'Periode Delegasi',
             'Server',
             'Aplikasi',
             'Judul Laporan',
@@ -63,23 +70,29 @@ class KanitMonthlyReportsExport implements FromCollection, WithHeadings, WithMap
 
     public function map($report): array
     {
-        static $number = 0;
-        $number++;
-
         return [
-            $number,
             optional($report->report_date)->format('d/m/Y'),
-            $report->employee->name ?? '-',
-            $report->employee->position ?? '-',
-            $report->employee->unit->name ?? '-',
-            $report->duty->name ?? '-',
-            $report->server->name ?? '-',
-            $report->application->name ?? '-',
-            $report->title ?? '-',
-            $report->description ?? '-',
-            $report->result ?? '-',
-            $report->photos->count(),
-            $report->status ?? '-',
+            $report->employee?->name ?? '-',
+            $report->unit?->name ?? '-',
+            $report->duty?->name ?? '-',
+
+            $report->is_delegated ? 'Delegasi' : 'Normal',
+            $report->dutyOwnerEmployee?->name ?? $report->employee?->name ?? '-',
+            $report->reportedByEmployee?->name ?? $report->employee?->name ?? '-',
+            $report->is_delegated
+                ? (
+                    ($report->delegation?->start_date?->format('d/m/Y') ?? '-') .
+                    ' s.d. ' .
+                    ($report->delegation?->end_date?->format('d/m/Y') ?? 'Tidak ditentukan')
+                )
+                : '-',
+
+            $report->server?->name ?? '-',
+            $report->application?->name ?? '-',
+            $report->title,
+            $report->description,
+            $report->notes,
+            $report->status,
         ];
     }
 }

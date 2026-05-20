@@ -48,4 +48,9 @@ class JobDuty extends Model
             ->withPivot(['is_primary', 'notes'])
             ->withTimestamps();
     }
+
+    public function delegations()
+    {
+        return $this->hasMany(DutyDelegation::class, 'duty_id');
+    }
 }
