@@ -148,9 +148,20 @@
                                     <button
                                         type="button"
                                         wire:click="toggleStatus({{ $delegation->id }})"
-                                        class="{{ $delegation->is_active ? 'bg-gray-600 hover:bg-gray-700' : 'bg-green-600 hover:bg-green-700' }} rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+                                        wire:loading.attr="disabled"
+                                        wire:target="toggleStatus({{ $delegation->id }})"
+                                        class="inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-semibold transition
+                                            {{ $delegation->is_active
+                                                ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                                                : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' }}"
                                     >
-                                        {{ $delegation->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                                        <span wire:loading.remove wire:target="toggleStatus({{ $delegation->id }})">
+                                            {{ $delegation->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                                        </span>
+
+                                        <span wire:loading wire:target="toggleStatus({{ $delegation->id }})">
+                                            Memproses...
+                                        </span>
                                     </button>
 
                                     <button

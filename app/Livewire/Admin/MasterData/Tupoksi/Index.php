@@ -4,6 +4,7 @@ namespace App\Livewire\Admin\MasterData\Tupoksi;
 
 use App\Models\JobDuty;
 use App\Models\Unit;
+use App\Services\ActivityLogger;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -60,29 +61,69 @@ class Index extends Component
 
     public function save()
     {
-        $this->validate();
+        $this->validate([
+            'unit_id' => ['nullable', 'exists:units,id'],
+            'name' => ['required', 'string', 'max:150'],
+            'description' => ['nullable', 'string'],
+            'is_active' => ['boolean'],
+        ]);
 
-        JobDuty::updateOrCreate(
-            ['id' => $this->tupoksiId],
-            [
-                'unit_id' => $this->unit_id,
-                'name' => $this->name,
-                'description' => $this->description,
-                'is_active' => $this->is_active,
-            ]
-        );
+        $data = [
+            'unit_id' => $this->unit_id ?: null,
+            'name' => $this->name,
+            'description' => $this->description,
+            'is_active' => (bool) $this->is_active,
+        ];
 
-        session()->flash(
-            'success',
-            $this->isEdit ? 'Tupoksi berhasil diperbarui.' : 'Tupoksi berhasil ditambahkan.'
-        );
+        if ($this->isEdit && $this->dutyId) {
+            $duty = JobDuty::findOrFail($this->dutyId);
+
+            $oldValues = $duty->toArray();
+
+            $duty->update($data);
+
+            ActivityLogger::log(
+                module: 'master_duty',
+                action: 'update',
+                description: 'Mengubah data tupoksi ' . $duty->name,
+                subject: $duty,
+                oldValues: $oldValues,
+                newValues: $duty->fresh()->toArray()
+            );
+
+            session()->flash('success', 'Tupoksi berhasil diperbarui.');
+        } else {
+            $duty = JobDuty::create($data);
+
+            ActivityLogger::log(
+                module: 'master_duty',
+                action: 'create',
+                description: 'Menambahkan data tupoksi ' . $duty->name,
+                subject: $duty,
+                newValues: $duty->fresh()->toArray()
+            );
+
+            session()->flash('success', 'Tupoksi berhasil ditambahkan.');
+        }
 
         $this->closeModal();
     }
 
     public function delete($id)
     {
-        JobDuty::findOrFail($id)->delete();
+        $duty = JobDuty::findOrFail($id);
+
+        $oldValues = $duty->toArray();
+
+        ActivityLogger::log(
+            module: 'master_duty',
+            action: 'delete',
+            description: 'Menghapus data tupoksi ' . $duty->name,
+            subject: $duty,
+            oldValues: $oldValues
+        );
+
+        $duty->delete();
 
         session()->flash('success', 'Tupoksi berhasil dihapus.');
     }

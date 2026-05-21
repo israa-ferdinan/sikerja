@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\MasterData\Server;
 
 use App\Models\Server;
+use App\Services\ActivityLogger;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -65,28 +66,71 @@ class Index extends Component
 
     public function save()
     {
-        $this->validate();
+        $this->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'ip_address' => ['nullable', 'string', 'max:100'],
+            'description' => ['nullable', 'string'],
+            'location' => ['nullable', 'string'],
+            'is_active' => ['boolean'],
+        ]);
 
-        Server::updateOrCreate(
-            ['id' => $this->serverId],
-            [
-                'name' => $this->name,
-                'ip_address' => $this->ip_address,
-                'domain' => $this->domain,
-                'location' => $this->location,
-                'description' => $this->description,
-                'is_active' => $this->is_active,
-            ]
-        );
+        $data = [
+            'name' => $this->name,
+            'ip_address' => $this->ip_address ?: null,
+            'description' => $this->description ?: null,
+            'location' => $this->location ?: null,
+            'is_active' => (bool) $this->is_active,
+        ];
 
-        session()->flash('success', $this->isEdit ? 'Server berhasil diperbarui.' : 'Server berhasil ditambahkan.');
+        if ($this->isEdit && $this->serverId) {
+            $server = Server::findOrFail($this->serverId);
+
+            $oldValues = $server->toArray();
+
+            $server->update($data);
+
+            ActivityLogger::log(
+                module: 'master_server',
+                action: 'update',
+                description: 'Mengubah data server ' . $server->name,
+                subject: $server,
+                oldValues: $oldValues,
+                newValues: $server->fresh()->toArray()
+            );
+
+            session()->flash('success', 'Server berhasil diperbarui.');
+        } else {
+            $server = Server::create($data);
+
+            ActivityLogger::log(
+                module: 'master_server',
+                action: 'create',
+                description: 'Menambahkan data server ' . $server->name,
+                subject: $server,
+                newValues: $server->fresh()->toArray()
+            );
+
+            session()->flash('success', 'Server berhasil ditambahkan.');
+        }
 
         $this->closeModal();
     }
 
     public function delete($id)
     {
-        Server::findOrFail($id)->delete();
+        $server = Server::findOrFail($id);
+
+        $oldValues = $server->toArray();
+
+        ActivityLogger::log(
+            module: 'master_server',
+            action: 'delete',
+            description: 'Menghapus data server ' . $server->name,
+            subject: $server,
+            oldValues: $oldValues
+        );
+
+        $server->delete();
 
         session()->flash('success', 'Server berhasil dihapus.');
     }

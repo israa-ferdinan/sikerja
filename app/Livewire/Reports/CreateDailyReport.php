@@ -17,6 +17,7 @@ use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use App\Services\ActivityLogger;
 
 class CreateDailyReport extends Component
 {
@@ -303,6 +304,28 @@ class CreateDailyReport extends Component
         ]);
 
         $this->storeCompressedPhotos($report);
+
+        $freshReport = $report->fresh()->toArray();
+
+        $freshReport['photo_count'] = DailyReportPhoto::query()
+            ->where('daily_report_id', $report->id)
+            ->count();
+
+        $freshReport['photo_paths'] = DailyReportPhoto::query()
+            ->where('daily_report_id', $report->id)
+            ->orderBy('sort_order')
+            ->pluck('file_path')
+            ->toArray();
+
+        ActivityLogger::log(
+            module: 'daily_report',
+            action: 'create',
+            description: $report->is_delegated
+                ? 'Membuat laporan kerja harian delegasi'
+                : 'Membuat laporan kerja harian',
+            subject: $report,
+            newValues: $freshReport
+        );
 
         session()->flash('success', 'Laporan kerja harian berhasil disimpan.');
 

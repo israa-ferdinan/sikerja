@@ -5,6 +5,7 @@ namespace App\Livewire\Admin\MasterData\Aplikasi;
 use App\Models\Application;
 use App\Models\Unit;
 use App\Models\Server;
+use App\Services\ActivityLogger;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -67,28 +68,73 @@ class Index extends Component
 
     public function save()
     {
-        $this->validate();
+        $this->validate([
+            'unit_id' => ['nullable', 'exists:units,id'],
+            'server_id' => ['nullable', 'exists:servers,id'],
+            'name' => ['required', 'string', 'max:255'],
+            'url' => ['nullable', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'is_active' => ['boolean'],
+        ]);
 
-        Application::updateOrCreate(
-            ['id' => $this->applicationId],
-            [
-                'unit_id' => $this->unit_id ?: null,
-                'server_id' => $this->server_id ?: null,
-                'name' => $this->name,
-                'url' => $this->url,
-                'description' => $this->description,
-                'is_active' => $this->is_active,
-            ]
-        );
+        $data = [
+            'unit_id' => $this->unit_id ?: null,
+            'server_id' => $this->server_id ?: null,
+            'name' => $this->name,
+            'url' => $this->url ?: null,
+            'description' => $this->description ?: null,
+            'is_active' => (bool) $this->is_active,
+        ];
 
-        session()->flash('success', $this->isEdit ? 'Aplikasi berhasil diperbarui.' : 'Aplikasi berhasil ditambahkan.');
+        if ($this->isEdit && $this->applicationId) {
+            $application = Application::findOrFail($this->applicationId);
+
+            $oldValues = $application->toArray();
+
+            $application->update($data);
+
+            ActivityLogger::log(
+                module: 'master_application',
+                action: 'update',
+                description: 'Mengubah data aplikasi ' . $application->name,
+                subject: $application,
+                oldValues: $oldValues,
+                newValues: $application->fresh(['server'])->toArray()
+            );
+
+            session()->flash('success', 'Aplikasi berhasil diperbarui.');
+        } else {
+            $application = Application::create($data);
+
+            ActivityLogger::log(
+                module: 'master_application',
+                action: 'create',
+                description: 'Menambahkan data aplikasi ' . $application->name,
+                subject: $application,
+                newValues: $application->fresh(['server'])->toArray()
+            );
+
+            session()->flash('success', 'Aplikasi berhasil ditambahkan.');
+        }
 
         $this->closeModal();
     }
 
     public function delete($id)
     {
-        Application::findOrFail($id)->delete();
+        $application = Application::with('server')->findOrFail($id);
+
+        $oldValues = $application->toArray();
+
+        ActivityLogger::log(
+            module: 'master_application',
+            action: 'delete',
+            description: 'Menghapus data aplikasi ' . $application->name,
+            subject: $application,
+            oldValues: $oldValues
+        );
+
+        $application->delete();
 
         session()->flash('success', 'Aplikasi berhasil dihapus.');
     }

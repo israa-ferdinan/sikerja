@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
 
+use App\Services\ActivityLogger;
+
 class Index extends Component
 {
     use WithPagination;
@@ -199,7 +201,7 @@ class Index extends Component
             })
             ->exists();
 
-        if (!$ownerHasDuty) {
+        if (! $ownerHasDuty) {
             $this->addError('duty_id', 'Tupoksi ini bukan milik pegawai pemilik yang dipilih.');
             return;
         }
@@ -231,12 +233,39 @@ class Index extends Component
             'notes' => $this->notes,
         ];
 
-        if ($this->editingId) {
-            DutyDelegation::where('id', $this->editingId)->update($data);
+        $isEditing = (bool) $this->editingId;
+
+        if ($isEditing) {
+            $delegation = DutyDelegation::findOrFail($this->editingId);
+
+            if (! $this->canManageDelegation($delegation)) {
+                abort(403);
+            }
+
+            $oldValues = $delegation->toArray();
+
+            $delegation->update($data);
+
+            ActivityLogger::log(
+                module: 'duty_delegation',
+                action: 'update',
+                description: 'Mengubah delegasi tupoksi',
+                subject: $delegation,
+                oldValues: $oldValues,
+                newValues: $delegation->fresh()->toArray()
+            );
         } else {
             $data['created_by'] = auth()->id();
 
-            DutyDelegation::create($data);
+            $delegation = DutyDelegation::create($data);
+
+            ActivityLogger::log(
+                module: 'duty_delegation',
+                action: 'create',
+                description: 'Membuat delegasi tupoksi',
+                subject: $delegation,
+                newValues: $delegation->fresh()->toArray()
+            );
         }
 
         $this->showFormModal = false;
@@ -245,7 +274,7 @@ class Index extends Component
 
         session()->flash(
             'success',
-            $this->editingId
+            $isEditing
                 ? 'Delegasi tupoksi berhasil diperbarui.'
                 : 'Delegasi tupoksi berhasil disimpan.'
         );
@@ -309,13 +338,28 @@ class Index extends Component
             abort(403);
         }
 
+        $oldValues = $delegation->toArray();
+
         $delegation->update([
             'is_active' => ! $delegation->is_active,
         ]);
 
+        $freshDelegation = $delegation->fresh();
+
+        ActivityLogger::log(
+            module: 'duty_delegation',
+            action: $freshDelegation->is_active ? 'activate' : 'deactivate',
+            description: $freshDelegation->is_active
+                ? 'Mengaktifkan delegasi tupoksi'
+                : 'Menonaktifkan delegasi tupoksi',
+            subject: $freshDelegation,
+            oldValues: $oldValues,
+            newValues: $freshDelegation->toArray()
+        );
+
         session()->flash(
             'success',
-            $delegation->fresh()->is_active
+            $freshDelegation->is_active
                 ? 'Delegasi tupoksi berhasil diaktifkan.'
                 : 'Delegasi tupoksi berhasil dinonaktifkan.'
         );
@@ -328,6 +372,8 @@ class Index extends Component
         if (! $this->canManageDelegation($delegation)) {
             abort(403);
         }
+
+        /* $oldValues = $delegation->toArray(); */
 
         $delegation->delete();
 

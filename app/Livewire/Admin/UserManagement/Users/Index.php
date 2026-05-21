@@ -4,6 +4,7 @@ namespace App\Livewire\Admin\UserManagement\Users;
 
 use App\Models\Role;
 use App\Models\User;
+use App\Services\ActivityLogger;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Hash;
@@ -76,9 +77,27 @@ class Index extends Component
 
         $user = User::findOrFail($this->selectedUserId);
 
+        $oldValues = $user->makeHidden(['password', 'remember_token'])->toArray();
+
         $user->update([
             'password' => Hash::make($validated['new_password']),
         ]);
+
+        ActivityLogger::log(
+            module: 'user_management',
+            action: 'reset_password',
+            description: 'Reset password user ' . $user->name,
+            subject: $user,
+            oldValues: $oldValues,
+            newValues: [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'username' => $user->username ?? null,
+                'password_reset' => true,
+                'reset_at' => now()->toDateTimeString(),
+            ]
+        );
 
         session()->flash('success', 'Password user ' . $user->name . ' berhasil direset.');
 
@@ -107,13 +126,28 @@ class Index extends Component
             return;
         }
 
+        $oldValues = $user->makeHidden(['password', 'remember_token'])->toArray();
+
         $user->update([
             'is_active' => ! $user->is_active,
         ]);
 
+        $freshUser = $user->fresh();
+
+        ActivityLogger::log(
+            module: 'user_management',
+            action: $freshUser->is_active ? 'activate' : 'deactivate',
+            description: $freshUser->is_active
+                ? 'Mengaktifkan user ' . $freshUser->name
+                : 'Menonaktifkan user ' . $freshUser->name,
+            subject: $freshUser,
+            oldValues: $oldValues,
+            newValues: $freshUser->makeHidden(['password', 'remember_token'])->toArray()
+        );
+
         session()->flash(
             'success',
-            $user->is_active
+            $freshUser->is_active
                 ? 'User berhasil diaktifkan.'
                 : 'User berhasil dinonaktifkan.'
         );
@@ -124,8 +158,9 @@ class Index extends Component
         $users = User::query()
             ->with([
                 'role',
+                'employee',
                 'employee.unit',
-                'employee.position',
+                'employee.jobPosition',
             ])
             ->when($this->search, function ($query) {
                 $query->where(function ($subQuery) {
@@ -138,7 +173,7 @@ class Index extends Component
                                 ->orWhereHas('unit', function ($unitQuery) {
                                     $unitQuery->where('name', 'like', '%' . $this->search . '%');
                                 })
-                                ->orWhereHas('position', function ($positionQuery) {
+                                ->orWhereHas('jobPosition', function ($positionQuery) {
                                     $positionQuery->where('name', 'like', '%' . $this->search . '%');
                                 });
                         });

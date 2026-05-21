@@ -4,6 +4,7 @@ namespace App\Livewire\Admin\MasterData\Pegawai;
 
 use App\Models\Employee;
 use App\Models\Unit;
+use App\Services\ActivityLogger;
 use App\Models\Position;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -69,26 +70,64 @@ class Index extends Component
     {
         $this->validate();
 
-        Employee::updateOrCreate(
-            ['id' => $this->employeeId],
-            [
-                'unit_id' => $this->unit_id,
-                'name' => $this->name,
-                'nip' => $this->nip,
-                'position_id' => $this->position_id,
-                'phone' => $this->phone,
-                'is_active' => $this->is_active,
-            ]
-        );
+        $data = [
+            'unit_id' => $this->unit_id,
+            'name' => $this->name,
+            'nip' => $this->nip,
+            'position_id' => $this->position_id,
+            'phone' => $this->phone,
+            'is_active' => $this->is_active,
+        ];
 
-        session()->flash('success', $this->isEdit ? 'Pegawai berhasil diperbarui.' : 'Pegawai berhasil ditambahkan.');
+        if ($this->isEdit && $this->employeeId) {
+            $employee = Employee::findOrFail($this->employeeId);
+
+            $oldValues = $employee->toArray();
+
+            $employee->update($data);
+
+            ActivityLogger::log(
+                module: 'master_employee',
+                action: 'update',
+                description: 'Mengubah data pegawai ' . $employee->name,
+                subject: $employee,
+                oldValues: $oldValues,
+                newValues: $employee->fresh()->toArray()
+            );
+
+            session()->flash('success', 'Pegawai berhasil diperbarui.');
+        } else {
+            $employee = Employee::create($data);
+
+            ActivityLogger::log(
+                module: 'master_employee',
+                action: 'create',
+                description: 'Menambahkan data pegawai ' . $employee->name,
+                subject: $employee,
+                newValues: $employee->fresh()->toArray()
+            );
+
+            session()->flash('success', 'Pegawai berhasil ditambahkan.');
+        }
 
         $this->closeModal();
     }
 
     public function delete($id)
     {
-        Employee::findOrFail($id)->delete();
+        $employee = Employee::with(['unit', 'jobPosition', 'duties'])->findOrFail($id);
+
+        $oldValues = $employee->toArray();
+
+        ActivityLogger::log(
+            module: 'master_employee',
+            action: 'delete',
+            description: 'Menghapus data pegawai ' . $employee->name,
+            subject: $employee,
+            oldValues: $oldValues
+        );
+
+        $employee->delete();
 
         session()->flash('success', 'Pegawai berhasil dihapus.');
     }

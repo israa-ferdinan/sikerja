@@ -150,7 +150,7 @@
                             </td>
 
                             <td class="px-4 py-3 text-gray-700">
-                                {{ $user->employee?->positionData?->name ?? $user->employee?->position ?? '-' }}
+                                {{ $user->employee?->jobPosition?->name ?? $user->employee?->position ?? '-' }}
                             </td>
 
                             <td class="px-4 py-3 text-center">

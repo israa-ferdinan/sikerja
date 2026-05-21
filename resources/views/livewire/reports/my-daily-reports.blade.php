@@ -59,8 +59,8 @@
                 <input
                     type="month"
                     wire:model.live="month"
-                    class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                >
+                    class="w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                />
             </div>
 
             {{-- Loading --}}

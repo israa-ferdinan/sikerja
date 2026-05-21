@@ -4,6 +4,7 @@ namespace App\Livewire\Reports;
 
 use App\Models\Unit;
 use App\Models\DailyReport;
+use App\Services\ActivityLogger;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use App\Exports\Reports\MonthlyReportWorkbookExport;
@@ -57,7 +58,7 @@ class ExportMonthlyReport extends Component
         if ($this->summary['total_reports'] === 0) {
             session()->flash('error', 'Tidak ada data laporan untuk filter yang dipilih.');
             return null;
-        }        
+        }
 
         if ($this->unit_id) {
             $unitName = Unit::where('id', $this->unit_id)->value('name') ?? 'unit';
@@ -71,7 +72,32 @@ class ExportMonthlyReport extends Component
             . $this->year
             . '.xlsx';
 
-       return Excel::download(
+        ActivityLogger::log(
+            module: 'monthly_export',
+            action: 'export',
+            description: 'Export laporan bulanan periode '
+                . str_pad($this->month, 2, '0', STR_PAD_LEFT)
+                . '/'
+                . $this->year,
+            newValues: [
+                'month' => $this->month,
+                'year' => $this->year,
+                'unit_id' => $this->unit_id,
+                'unit_name' => $unitName,
+                'file_name' => $fileName,
+                'total_reports' => $this->summary['total_reports'] ?? 0,
+                'total_photos' => $this->summary['total_photos'] ?? 0,
+                'total_employees' => $this->summary['total_employees'] ?? 0,
+                'exported_by' => [
+                    'user_id' => $user?->id,
+                    'name' => $user?->name,
+                    'email' => $user?->email,
+                    'role' => $user?->role?->name,
+                ],
+            ]
+        );
+
+        return Excel::download(
             new MonthlyReportWorkbookExport(
                 month: $this->month,
                 year: $this->year,

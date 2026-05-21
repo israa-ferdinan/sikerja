@@ -130,7 +130,7 @@
                             </td>
 
                             <td class="px-4 py-3 text-gray-700">
-                                {{ $employee->positionData?->name ?? $employee->position ?? '-' }}
+                                {{ $employee->jobPosition?->name ?? $employee->position ?? '-' }}
                             </td>
 
                             <td class="px-4 py-3 text-gray-700">

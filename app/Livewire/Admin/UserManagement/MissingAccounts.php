@@ -10,6 +10,7 @@ use Illuminate\Validation\Rule;
 use App\Models\Employee;
 use App\Models\Position;
 use App\Models\Unit;
+use App\Services\ActivityLogger;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -63,7 +64,7 @@ class MissingAccounts extends Component
     public function render()
     {
         $employees = Employee::query()
-            ->with(['unit', 'position'])
+            ->with(['unit', 'jobPosition'])
             ->whereDoesntHave('user')
             ->when($this->search, function ($query) {
                 $query->where(function ($subQuery) {
@@ -74,7 +75,7 @@ class MissingAccounts extends Component
                         ->orWhereHas('unit', function ($unitQuery) {
                             $unitQuery->where('name', 'like', '%' . $this->search . '%');
                         })
-                        ->orWhereHas('position', function ($positionQuery) {
+                        ->orWhereHas('jobPosition', function ($positionQuery) {
                             $positionQuery->where('name', 'like', '%' . $this->search . '%');
                         });
                 });
@@ -220,7 +221,7 @@ class MissingAccounts extends Component
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
         ]);
 
-        User::create([
+        $user = User::create([
             'name' => $validated['user_name'],
             'email' => $validated['email'],
             'username' => $validated['username'],
@@ -229,6 +230,16 @@ class MissingAccounts extends Component
             'password' => Hash::make($validated['password']),
             'is_active' => true,
         ]);
+
+        ActivityLogger::log(
+            module: 'user_management',
+            action: 'create',
+            description: 'Membuat akun user untuk pegawai ' . $employee->name,
+            subject: $user,
+            newValues: $user->fresh(['role', 'employee'])
+                ->makeHidden(['password', 'remember_token'])
+                ->toArray()
+        );
 
         session()->flash('success', 'Akun user berhasil dibuat untuk pegawai: ' . $employee->name);
 

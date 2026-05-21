@@ -7,6 +7,7 @@ use App\Models\DailyReport;
 use App\Models\DailyReportPhoto;
 use App\Models\Duty;
 use App\Models\Server;
+use App\Services\ActivityLogger;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
@@ -130,6 +131,16 @@ class EditDailyReport extends Component
             ->where('id', $photoId)
             ->firstOrFail();
 
+        $oldValues = $photo->toArray();
+
+        ActivityLogger::log(
+            module: 'daily_report_photo',
+            action: 'delete',
+            description: 'Menghapus foto laporan kerja harian',
+            subject: $photo,
+            oldValues: $oldValues
+        );
+
         if ($photo->file_path && Storage::disk('public')->exists($photo->file_path)) {
             Storage::disk('public')->delete($photo->file_path);
         }
@@ -138,6 +149,8 @@ class EditDailyReport extends Component
 
         $this->report->refresh();
         $this->report->load('photos');
+
+        session()->flash('success', 'Foto laporan berhasil dihapus.');
     }
 
     public function update()
@@ -170,6 +183,15 @@ class EditDailyReport extends Component
             abort(403, 'Anda tidak memiliki akses untuk mengubah laporan ini.');
         }
 
+        $oldValues = $this->report->fresh()->toArray();
+
+        $oldValues['photo_count'] = $this->report->photos()->count();
+
+        $oldValues['photo_paths'] = $this->report->photos()
+            ->orderBy('sort_order')
+            ->pluck('file_path')
+            ->toArray();
+
         $this->report->update([
             'duty_id' => $this->duty_id ?: null,
             'server_id' => $this->server_id ?: null,
@@ -181,6 +203,28 @@ class EditDailyReport extends Component
         ]);
 
         $this->storeCompressedPhotos();
+
+        $this->report->refresh();
+
+        $newValues = $this->report->fresh()->toArray();
+
+        $newValues['photo_count'] = $this->report->photos()->count();
+
+        $newValues['photo_paths'] = $this->report->photos()
+            ->orderBy('sort_order')
+            ->pluck('file_path')
+            ->toArray();
+
+        ActivityLogger::log(
+            module: 'daily_report',
+            action: 'update',
+            description: $this->report->is_delegated
+                ? 'Mengubah laporan kerja harian delegasi'
+                : 'Mengubah laporan kerja harian',
+            subject: $this->report,
+            oldValues: $oldValues,
+            newValues: $newValues
+        );
 
         session()->flash('success', 'Laporan berhasil diperbarui.');
 

@@ -5,6 +5,7 @@ namespace App\Livewire\Admin\MasterData\ReportTemplate;
 use App\Models\JobDuty;
 use App\Models\ReportTemplate;
 use App\Models\Unit;
+use App\Services\ActivityLogger;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -72,30 +73,65 @@ class Index extends Component
     {
         $this->validate();
 
-        ReportTemplate::updateOrCreate(
-            ['id' => $this->reportTemplateId],
-            [
-                'unit_id' => $this->unit_id ?: null,
-                'job_duty_id' => $this->job_duty_id ?: null,
-                'title' => $this->title,
-                'category' => $this->category,
-                'description_template' => $this->description_template,
-                'result_template' => $this->result_template,
-                'is_active' => $this->is_active,
-            ]
-        );
+        $data = [
+            'unit_id' => $this->unit_id ?: null,
+            'job_duty_id' => $this->job_duty_id ?: null,
+            'title' => $this->title,
+            'category' => $this->category ?: null,
+            'description_template' => $this->description_template,
+            'result_template' => $this->result_template ?: null,
+            'is_active' => (bool) $this->is_active,
+        ];
 
-        session()->flash(
-            'success',
-            $this->isEdit ? 'Template laporan berhasil diperbarui.' : 'Template laporan berhasil ditambahkan.'
-        );
+        if ($this->isEdit && $this->reportTemplateId) {
+            $template = ReportTemplate::findOrFail($this->reportTemplateId);
+
+            $oldValues = $template->toArray();
+
+            $template->update($data);
+
+            ActivityLogger::log(
+                module: 'master_report_template',
+                action: 'update',
+                description: 'Mengubah template laporan ' . $template->title,
+                subject: $template,
+                oldValues: $oldValues,
+                newValues: $template->fresh(['unit', 'jobDuty'])->toArray()
+            );
+
+            session()->flash('success', 'Template laporan berhasil diperbarui.');
+        } else {
+            $template = ReportTemplate::create($data);
+
+            ActivityLogger::log(
+                module: 'master_report_template',
+                action: 'create',
+                description: 'Menambahkan template laporan ' . $template->title,
+                subject: $template,
+                newValues: $template->fresh(['unit', 'jobDuty'])->toArray()
+            );
+
+            session()->flash('success', 'Template laporan berhasil ditambahkan.');
+        }
 
         $this->closeModal();
     }
 
     public function delete($id)
     {
-        ReportTemplate::findOrFail($id)->delete();
+        $template = ReportTemplate::with(['unit', 'jobDuty'])->findOrFail($id);
+
+        $oldValues = $template->toArray();
+
+        ActivityLogger::log(
+            module: 'master_report_template',
+            action: 'delete',
+            description: 'Menghapus template laporan ' . $template->title,
+            subject: $template,
+            oldValues: $oldValues
+        );
+
+        $template->delete();
 
         session()->flash('success', 'Template laporan berhasil dihapus.');
     }

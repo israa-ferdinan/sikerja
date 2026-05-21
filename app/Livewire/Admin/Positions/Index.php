@@ -3,9 +3,10 @@
 namespace App\Livewire\Admin\Positions;
 
 use App\Models\Position;
+use App\Services\ActivityLogger;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Illuminate\Validation\Rule;
 
 class Index extends Component
 {
@@ -35,6 +36,7 @@ class Index extends Component
         $this->resetForm();
 
         $this->isEditing = false;
+        $this->positionId = null;
         $this->showForm = true;
         $this->is_active = true;
     }
@@ -60,7 +62,6 @@ class Index extends Component
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('positions', 'name')->ignore($this->positionId),
             ],
             'code' => [
                 'nullable',
@@ -78,23 +79,49 @@ class Index extends Component
             ],
         ], [
             'name.required' => 'Nama jabatan wajib diisi.',
-            'name.unique' => 'Nama jabatan sudah digunakan.',
-            'code.unique' => 'Kode jabatan sudah digunakan.',
+            'name.max' => 'Nama jabatan maksimal 255 karakter.',
             'code.max' => 'Kode jabatan maksimal 50 karakter.',
+            'code.unique' => 'Kode jabatan sudah digunakan.',
             'description.max' => 'Deskripsi maksimal 1000 karakter.',
         ]);
 
-        Position::updateOrCreate(
-            ['id' => $this->positionId],
-            $validated
-        );
+        $data = [
+            'name' => $validated['name'],
+            'code' => $validated['code'] ?: null,
+            'description' => $validated['description'] ?: null,
+            'is_active' => (bool) $validated['is_active'],
+        ];
 
-        session()->flash(
-            'success',
-            $this->isEditing
-                ? 'Data jabatan berhasil diperbarui.'
-                : 'Data jabatan berhasil ditambahkan.'
-        );
+        if ($this->isEditing && $this->positionId) {
+            $position = Position::findOrFail($this->positionId);
+
+            $oldValues = $position->toArray();
+
+            $position->update($data);
+
+            ActivityLogger::log(
+                module: 'master_position',
+                action: 'update',
+                description: 'Mengubah data jabatan ' . $position->name,
+                subject: $position,
+                oldValues: $oldValues,
+                newValues: $position->fresh()->toArray()
+            );
+
+            session()->flash('success', 'Jabatan berhasil diperbarui.');
+        } else {
+            $position = Position::create($data);
+
+            ActivityLogger::log(
+                module: 'master_position',
+                action: 'create',
+                description: 'Menambahkan data jabatan ' . $position->name,
+                subject: $position,
+                newValues: $position->fresh()->toArray()
+            );
+
+            session()->flash('success', 'Jabatan berhasil ditambahkan.');
+        }
 
         $this->resetForm();
     }
@@ -103,25 +130,50 @@ class Index extends Component
     {
         $position = Position::findOrFail($id);
 
+        $oldValues = $position->toArray();
+
         $position->update([
             'is_active' => ! $position->is_active,
         ]);
 
-        session()->flash('success', 'Status jabatan berhasil diperbarui.');
+        $freshPosition = $position->fresh();
+
+        ActivityLogger::log(
+            module: 'master_position',
+            action: $freshPosition->is_active ? 'activate' : 'deactivate',
+            description: $freshPosition->is_active
+                ? 'Mengaktifkan jabatan ' . $freshPosition->name
+                : 'Menonaktifkan jabatan ' . $freshPosition->name,
+            subject: $freshPosition,
+            oldValues: $oldValues,
+            newValues: $freshPosition->toArray()
+        );
+
+        session()->flash(
+            'success',
+            $freshPosition->is_active
+                ? 'Jabatan berhasil diaktifkan.'
+                : 'Jabatan berhasil dinonaktifkan.'
+        );
     }
 
-    public function delete(int $id): void
+    public function delete($id): void
     {
-        $position = Position::withCount('employees')->findOrFail($id);
+        $position = Position::findOrFail($id);
 
-        if ($position->employees_count > 0) {
-            session()->flash('error', 'Jabatan tidak bisa dihapus karena sudah digunakan oleh pegawai.');
-            return;
-        }
+        $oldValues = $position->toArray();
+
+        ActivityLogger::log(
+            module: 'master_position',
+            action: 'delete',
+            description: 'Menghapus data jabatan ' . $position->name,
+            subject: $position,
+            oldValues: $oldValues
+        );
 
         $position->delete();
 
-        session()->flash('success', 'Data jabatan berhasil dihapus.');
+        session()->flash('success', 'Jabatan berhasil dihapus.');
     }
 
     public function cancel(): void

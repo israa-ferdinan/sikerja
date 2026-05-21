@@ -114,6 +114,19 @@
                 >
                     Delegasi Tupoksi
                 </x-sidebar-link>
+
+                <div class="pt-4 pb-1">
+                    <p class="px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                        Log
+                    </p>
+                </div>
+
+                <x-sidebar-link
+                    :href="route('admin.activity-logs')"
+                    :active="request()->routeIs('admin.activity-logs.*')"
+                >
+                    Log Aktivitas
+                </x-sidebar-link>
                 
             @endif
 
@@ -151,7 +164,6 @@
                 >
                     Rekap & Export
                 </x-sidebar-link>
-
             @endif
 
             @if(auth()->user()->isPegawai())

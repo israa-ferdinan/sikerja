@@ -16,6 +16,7 @@ use App\Livewire\Admin\UserManagement\MissingAccounts;
 use App\Livewire\Admin\UserManagement\Users\Index as UserManagementIndex;
 use App\Livewire\Admin\MasterData\Pegawai\ManageDuties;
 use App\Livewire\Admin\DutyDelegations\Index as DutyDelegationIndex;
+use App\Livewire\Admin\ActivityLogs\Index as ActivityLogIndex;
 
 use App\Livewire\Kanit\Dashboard as KanitDashboard;
 use App\Livewire\Kanit\ReportMonitoring;
@@ -28,6 +29,8 @@ use App\Livewire\Reports\MyDailyReports;
 use App\Livewire\Reports\ShowDailyReport;
 use App\Livewire\Reports\EditDailyReport;
 use App\Livewire\Reports\ExportMonthlyReport;
+
+use App\Services\ActivityLogger;
 
 Route::get('/', function () {
     return auth()->check()
@@ -89,6 +92,9 @@ Route::middleware(['role:admin'])
         Route::get('/user-management/users', UserManagementIndex::class)
             ->name('user-management.users.index');
 
+        Route::get('/activity-logs', ActivityLogIndex::class)
+            ->name('activity-logs');
+
         Route::get('/reports/export/monthly', ExportMonthlyReport::class)
             ->name('reports.export.monthly');
     }); 
@@ -126,14 +132,15 @@ Route::middleware(['role:pegawai'])
             ->name('reports.edit');
     });
 
-    Route::post('/logout', function (Request $request) {
-        Auth::guard('web')->logout();
+Route::post('/logout', function (Request $request) {
+    Auth::guard('web')->logout();
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
 
-        return redirect()->route('login');
+    return redirect()->route('login');
     })->name('logout');
+
 });
 
 require __DIR__.'/auth.php';

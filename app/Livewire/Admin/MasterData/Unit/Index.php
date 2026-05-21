@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\MasterData\Unit;
 
 use App\Models\Unit;
+use App\Services\ActivityLogger;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -63,17 +64,43 @@ class Index extends Component
     {
         $this->validate();
 
-        Unit::updateOrCreate(
-            ['id' => $this->unitId],
-            [
-                'name' => $this->name,
-                'code' => $this->code,
-                'description' => $this->description,
-                'is_active' => $this->is_active,
-            ]
-        );
+        $data = [
+            'name' => $this->name,
+            'code' => $this->code,
+            'description' => $this->description,
+            'is_active' => $this->is_active,
+        ];
 
-        session()->flash('success', $this->isEdit ? 'Unit berhasil diperbarui.' : 'Unit berhasil ditambahkan.');
+        if ($this->isEdit && $this->unitId) {
+            $unit = Unit::findOrFail($this->unitId);
+
+            $oldValues = $unit->toArray();
+
+            $unit->update($data);
+
+            ActivityLogger::log(
+                module: 'master_unit',
+                action: 'update',
+                description: 'Mengubah data unit ' . $unit->name,
+                subject: $unit,
+                oldValues: $oldValues,
+                newValues: $unit->fresh()->toArray()
+            );
+
+            session()->flash('success', 'Unit berhasil diperbarui.');
+        } else {
+            $unit = Unit::create($data);
+
+            ActivityLogger::log(
+                module: 'master_unit',
+                action: 'create',
+                description: 'Menambahkan data unit ' . $unit->name,
+                subject: $unit,
+                newValues: $unit->fresh()->toArray()
+            );
+
+            session()->flash('success', 'Unit berhasil ditambahkan.');
+        }
 
         $this->closeModal();
     }
@@ -81,6 +108,16 @@ class Index extends Component
     public function delete($id)
     {
         $unit = Unit::findOrFail($id);
+
+        $oldValues = $unit->toArray();
+
+        ActivityLogger::log(
+            module: 'master_unit',
+            action: 'delete',
+            description: 'Menghapus data unit ' . $unit->name,
+            subject: $unit,
+            oldValues: $oldValues
+        );
 
         $unit->delete();
 
