@@ -38,6 +38,8 @@
                             <th class="border-b px-3 py-3">Unit</th>
                             <th class="border-b px-3 py-3">Nama Tupoksi</th>
                             <th class="border-b px-3 py-3">Deskripsi</th>
+                            <th class="border-b px-3 py-3">Klasifikasi</th>
+                            <th class="border-b px-3 py-3">Objek Pekerjaan</th>
                             <th class="border-b px-3 py-3">Status</th>
                             <th class="border-b px-3 py-3">Aksi</th>
                         </tr>
@@ -60,6 +62,25 @@
 
                                 <td class="border-b px-3 py-3">
                                     {{ $tupoksi->description ?? '-' }}
+                                </td>
+
+                                <td class="border-b px-3 py-3">
+                                    @if ($tupoksi->classification)
+                                        <span class="rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">
+                                            {{ $tupoksi->classification->name }}
+                                        </span>
+                                    @else
+                                        <span class="text-gray-400">-</span>
+                                    @endif
+                                </td>
+
+                                <td class="border-b px-3 py-3">
+                                    <div class="font-medium text-gray-700">
+                                        {{ $tupoksi->object_type_label }}
+                                    </div>
+                                    <div class="text-xs text-gray-500">
+                                        {{ $tupoksi->work_object_label }}
+                                    </div>
                                 </td>
 
                                 <td class="border-b px-3 py-3">
@@ -95,7 +116,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-3 py-6 text-center text-gray-500">
+                                <td colspan="8" class="px-3 py-6 text-center text-gray-500">
                                     Data tupoksi belum tersedia.
                                 </td>
                             </tr>
@@ -112,7 +133,7 @@
 
     @if ($showModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div class="mx-4 w-full max-w-2xl rounded-xl bg-white shadow-lg">
+            <div class="mx-4 w-full max-w-3xl rounded-xl bg-white shadow-lg">
                 <form wire:submit.prevent="save">
                     <div class="flex items-center justify-between border-b px-6 py-4">
                         <h2 class="text-lg font-semibold text-gray-800">
@@ -182,6 +203,114 @@
                                 <div class="mt-1 text-sm text-red-600">{{ $message }}</div>
                             @enderror
                         </div>
+
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div>
+                                <label class="mb-1 block text-sm font-medium text-gray-700">
+                                    Klasifikasi Tupoksi
+                                </label>
+
+                                <select
+                                    wire:model.defer="duty_classification_id"
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                                    <option value="">Pilih Klasifikasi</option>
+                                    @foreach ($classifications as $classification)
+                                        <option value="{{ $classification->id }}">
+                                            {{ $classification->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+
+                                @error('duty_classification_id')
+                                    <div class="mt-1 text-sm text-red-600">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label class="mb-1 block text-sm font-medium text-gray-700">
+                                    Jenis Objek Pekerjaan
+                                </label>
+
+                                <select
+                                    wire:model.live="object_type"
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                                    @foreach ($this->objectTypeOptions as $value => $label)
+                                        <option value="{{ $value }}">
+                                            {{ $label }}
+                                        </option>
+                                    @endforeach
+                                </select>
+
+                                @error('object_type')
+                                    <div class="mt-1 text-sm text-red-600">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        @if ($object_type === 'server')
+                            <div>
+                                <label class="mb-1 block text-sm font-medium text-gray-700">
+                                    Server Terkait <span class="text-red-500">*</span>
+                                </label>
+
+                                <select
+                                    wire:model.defer="server_id"
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                                    <option value="">Pilih Server</option>
+                                    @foreach ($servers as $server)
+                                        <option value="{{ $server->id }}">
+                                            {{ $server->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+
+                                @error('server_id')
+                                    <div class="mt-1 text-sm text-red-600">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        @endif
+
+                        @if ($object_type === 'application')
+                            <div>
+                                <label class="mb-1 block text-sm font-medium text-gray-700">
+                                    Aplikasi Terkait <span class="text-red-500">*</span>
+                                </label>
+
+                                <select
+                                    wire:model.defer="application_id"
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                                    <option value="">Pilih Aplikasi</option>
+                                    @foreach ($applications as $application)
+                                        <option value="{{ $application->id }}">
+                                            {{ $application->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+
+                                @error('application_id')
+                                    <div class="mt-1 text-sm text-red-600">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        @endif
+
+                        @if (in_array($object_type, ['facility', 'document', 'user_service', 'other'], true))
+                            <div>
+                                <label class="mb-1 block text-sm font-medium text-gray-700">
+                                    Nama Objek Pekerjaan <span class="text-red-500">*</span>
+                                </label>
+
+                                <input
+                                    type="text"
+                                    wire:model.defer="object_name"
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                                    placeholder="Contoh: CCTV Gedung A, Dokumen SPBE, Permintaan User"
+                                >
+
+                                @error('object_name')
+                                    <div class="mt-1 text-sm text-red-600">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        @endif
 
                         <label class="flex items-center gap-2 text-sm text-gray-700">
                             <input

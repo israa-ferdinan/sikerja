@@ -66,37 +66,77 @@
                         </div>
                     </div>
 
-                    <div class="mt-2 space-y-1 text-xs text-gray-500">
-                        @if ($report->is_delegated)
+                    <div class="rounded-lg bg-blue-50 border border-blue-100 p-4">
+                        <div class="text-xs text-blue-600 font-semibold">
+                            Klasifikasi & Objek Tupoksi
+                        </div>
+
+                        <div class="mt-3 space-y-2 text-sm">
                             <div>
-                                Pemilik Tupoksi:
-                                <span class="font-medium text-gray-700">
-                                    {{ $report->dutyOwnerEmployee?->name ?? '-' }}
-                                </span>
+                                <div class="text-xs text-blue-500">Klasifikasi</div>
+                                <div class="font-medium text-blue-900">
+                                    {{ $report->duty?->classification?->name ?? 'Tanpa klasifikasi' }}
+                                </div>
                             </div>
 
                             <div>
-                                Dilaporkan Oleh:
-                                <span class="font-medium text-gray-700">
-                                    {{ $report->reportedByEmployee?->name ?? '-' }}
-                                </span>
+                                <div class="text-xs text-blue-500">Jenis Objek</div>
+                                <div class="font-medium text-blue-900">
+                                    {{ $report->duty?->object_type_label ?? '-' }}
+                                </div>
                             </div>
-                        @else
+
                             <div>
-                                Dilaporkan Oleh:
-                                <span class="font-medium text-gray-700">
-                                    {{ $report->reportedByEmployee?->name ?? $report->employee?->name ?? '-' }}
-                                </span>
+                                <div class="text-xs text-blue-500">Objek</div>
+                                <div class="font-medium text-blue-900">
+                                    {{ $report->duty?->work_object_label ?? '-' }}
+                                </div>
                             </div>
-                        @endif
+                        </div>
+                    </div>
+
+                    <div class="rounded-lg bg-gray-50 p-4">
+                        <div class="text-xs text-gray-500">
+                            Informasi Pelapor
+                        </div>
+
+                        <div class="mt-2 space-y-1 text-sm text-gray-700">
+                            @if ($report->is_delegated)
+                                <div>
+                                    Pemilik Tupoksi:
+                                    <span class="font-medium text-gray-800">
+                                        {{ $report->dutyOwnerEmployee?->name ?? '-' }}
+                                    </span>
+                                </div>
+
+                                <div>
+                                    Dilaporkan Oleh:
+                                    <span class="font-medium text-gray-800">
+                                        {{ $report->reportedByEmployee?->name ?? '-' }}
+                                    </span>
+                                </div>
+                            @else
+                                <div>
+                                    Dilaporkan Oleh:
+                                    <span class="font-medium text-gray-800">
+                                        {{ $report->reportedByEmployee?->name ?? $report->employee?->name ?? '-' }}
+                                    </span>
+                                </div>
+                            @endif
+                        </div>
                     </div>
 
                     @if ($report->is_delegated && $report->delegation)
-                        <div class="mt-1 text-xs text-gray-400">
-                            Periode Delegasi:
-                            {{ $report->delegation->start_date?->format('d/m/Y') ?? '-' }}
-                            s.d.
-                            {{ $report->delegation->end_date?->format('d/m/Y') ?? 'Tidak ditentukan' }}
+                        <div class="rounded-lg bg-purple-50 border border-purple-100 p-4">
+                            <div class="text-xs text-purple-600 font-semibold">
+                                Periode Delegasi
+                            </div>
+
+                            <div class="mt-1 text-sm font-medium text-purple-900">
+                                {{ $report->delegation->start_date?->format('d/m/Y') ?? '-' }}
+                                s.d.
+                                {{ $report->delegation->end_date?->format('d/m/Y') ?? 'Tidak ditentukan' }}
+                            </div>
                         </div>
                     @endif
 

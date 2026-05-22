@@ -26,7 +26,11 @@ class MonthlyDutySummaryExport implements FromCollection, WithHeadings, ShouldAu
     public function collection(): Collection
     {
         $reports = DailyReport::query()
-            ->with(['duty'])
+            ->with([
+                'duty.classification',
+                'duty.server',
+                'duty.application',
+            ])
             ->whereMonth('report_date', $this->month)
             ->whereYear('report_date', $this->year)
             ->when($this->unitId, function ($query) {
@@ -43,6 +47,9 @@ class MonthlyDutySummaryExport implements FromCollection, WithHeadings, ShouldAu
                 return [
                     'no' => $index + 1,
                     'tupoksi' => $firstReport?->duty?->name ?? '-',
+                    'klasifikasi_tupoksi' => $firstReport?->duty?->classification?->name ?? '-',
+                    'jenis_objek_tupoksi' => $firstReport?->duty?->object_type_label ?? '-',
+                    'objek_tupoksi' => $firstReport?->duty?->work_object_label ?? '-',
                     'total_laporan' => $dutyReports->count(),
                     'laporan_normal' => $dutyReports->where('is_delegated', false)->count(),
                     'laporan_delegasi' => $dutyReports->where('is_delegated', true)->count(),
@@ -57,6 +64,9 @@ class MonthlyDutySummaryExport implements FromCollection, WithHeadings, ShouldAu
         return [
             'No',
             'Tupoksi',
+            'Klasifikasi Tupoksi',
+            'Jenis Objek Tupoksi',
+            'Objek Tupoksi',
             'Total Laporan',
             'Laporan Normal',
             'Laporan Delegasi',
@@ -113,6 +123,13 @@ class MonthlyDutySummaryExport implements FromCollection, WithHeadings, ShouldAu
                         ],
                     ],
                 ]);
+
+                $sheet->getColumnDimension('B')->setWidth(35);
+                $sheet->getColumnDimension('C')->setWidth(25);
+                $sheet->getColumnDimension('D')->setWidth(25);
+                $sheet->getColumnDimension('E')->setWidth(30);
+
+                $sheet->getStyle('B:E')->getAlignment()->setWrapText(true);
 
                 $sheet->getRowDimension(1)->setRowHeight(24);
             },

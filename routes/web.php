@@ -17,6 +17,7 @@ use App\Livewire\Admin\UserManagement\Users\Index as UserManagementIndex;
 use App\Livewire\Admin\MasterData\Pegawai\ManageDuties;
 use App\Livewire\Admin\DutyDelegations\Index as DutyDelegationIndex;
 use App\Livewire\Admin\ActivityLogs\Index as ActivityLogIndex;
+use App\Livewire\Admin\MasterData\DutyClassifications\Index as DutyClassificationIndex;
 
 use App\Livewire\Kanit\Dashboard as KanitDashboard;
 use App\Livewire\Kanit\ReportMonitoring;
@@ -97,6 +98,9 @@ Route::middleware(['role:admin'])
 
         Route::get('/reports/export/monthly', ExportMonthlyReport::class)
             ->name('reports.export.monthly');
+
+        Route::get('/master-data/duty-classifications', DutyClassificationIndex::class)
+            ->name('master-data.duty-classifications.index');
     }); 
 
 Route::middleware(['auth', 'kanit'])->prefix('kanit')->name('kanit.')->group(function () {

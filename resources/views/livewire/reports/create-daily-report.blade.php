@@ -139,6 +139,9 @@
                                     @foreach ($personalDuties as $duty)
                                         <option value="personal:{{ $duty['id'] }}">
                                             {{ $duty['name'] }}
+                                            @if (! empty($duty['classification_name']))
+                                                — {{ $duty['classification_name'] }}
+                                            @endif
                                         </option>
                                     @endforeach
                                 </optgroup>
@@ -149,6 +152,9 @@
                                     @foreach ($delegatedDuties as $delegation)
                                         <option value="delegation:{{ $delegation['id'] }}">
                                             {{ $delegation['duty_name'] }} — dari {{ $delegation['owner_name'] }}
+                                            @if (! empty($delegation['classification_name']))
+                                                — {{ $delegation['classification_name'] }}
+                                            @endif
                                         </option>
                                     @endforeach
                                 </optgroup>
@@ -158,6 +164,49 @@
                         @error('selected_duty')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
+
+                        @if ($this->selectedDutyInfo)
+                        <div class="mt-3 rounded-xl border border-blue-100 bg-blue-50 p-3 text-xs text-blue-900">
+                            <div class="mb-2 flex flex-wrap items-center gap-2">
+                                <span class="font-semibold">
+                                    Info Tupoksi
+                                </span>
+
+                                <span class="rounded-full bg-white px-2 py-0.5 font-medium text-blue-700 ring-1 ring-blue-100">
+                                    {{ $this->selectedDutyInfo['source'] }}
+                                </span>
+
+                                @if (! empty($this->selectedDutyInfo['owner_name']))
+                                    <span class="text-blue-700">
+                                        dari {{ $this->selectedDutyInfo['owner_name'] }}
+                                    </span>
+                                @endif
+                            </div>
+
+                            <div class="grid gap-2 sm:grid-cols-3">
+                                <div>
+                                    <div class="font-semibold text-blue-700">Klasifikasi</div>
+                                    <div class="mt-0.5">
+                                        {{ $this->selectedDutyInfo['classification_name'] }}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="font-semibold text-blue-700">Jenis Objek</div>
+                                    <div class="mt-0.5">
+                                        {{ $this->selectedDutyInfo['object_type_label'] }}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="font-semibold text-blue-700">Objek</div>
+                                    <div class="mt-0.5">
+                                        {{ $this->selectedDutyInfo['work_object_label'] }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                         
                         @if (count($personalDuties) === 0 && count($delegatedDuties) === 0)
                             <div class="mt-3 rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
@@ -400,7 +449,7 @@
 
                     <button
                         type="submit"
-                        @disabled($duties->isEmpty())
+                        @disabled(count($personalDuties) === 0 && count($delegatedDuties) === 0)
                         wire:loading.attr="disabled"
                         wire:target="save,newPhotos"
                         class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-70"

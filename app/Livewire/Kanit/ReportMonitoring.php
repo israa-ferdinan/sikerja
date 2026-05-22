@@ -151,7 +151,9 @@ class ReportMonitoring extends Component
         $reports = DailyReport::query()
             ->with([
                 'employee.unit',
-                'duty',
+                'duty.classification',
+                'duty.server',
+                'duty.application',
                 'server',
                 'application',
                 'photos',
@@ -201,7 +203,17 @@ class ReportMonitoring extends Component
                             $employeeQuery->where('name', 'like', $keyword);
                         })
                         ->orWhereHas('duty', function ($dutyQuery) use ($keyword) {
-                            $dutyQuery->where('name', 'like', $keyword);
+                            $dutyQuery->where('name', 'like', $keyword)
+                                ->orWhere('object_name', 'like', $keyword);
+                        })
+                        ->orWhereHas('duty.classification', function ($classificationQuery) use ($keyword) {
+                            $classificationQuery->where('name', 'like', $keyword);
+                        })
+                        ->orWhereHas('duty.server', function ($serverQuery) use ($keyword) {
+                            $serverQuery->where('name', 'like', $keyword);
+                        })
+                        ->orWhereHas('duty.application', function ($applicationQuery) use ($keyword) {
+                            $applicationQuery->where('name', 'like', $keyword);
                         })
                         ->orWhereHas('server', function ($serverQuery) use ($keyword) {
                             $serverQuery->where('name', 'like', $keyword);

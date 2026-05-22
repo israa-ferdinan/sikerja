@@ -32,7 +32,7 @@
                     Filter Laporan
                 </h2>
                 <p class="mt-1 text-sm text-slate-500">
-                    Gunakan filter untuk melihat laporan berdasarkan periode, pegawai, tupoksi, server, atau aplikasi.
+                    Gunakan filter untuk melihat laporan berdasarkan periode, pegawai, tupoksi, klasifikasi, objek, server, atau aplikasi.
                 </p>
             </div>
 
@@ -174,7 +174,7 @@
                     <input
                         type="text"
                         wire:model.live.debounce.500ms="search"
-                        placeholder="Cari judul, deskripsi, pegawai, tupoksi, server, aplikasi..."
+                        placeholder="Cari judul, deskripsi, pegawai, tupoksi, klasifikasi, objek, server, aplikasi..."
                         class="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-700 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                     >
                 </div>
@@ -364,7 +364,7 @@
                                     Tupoksi
                                 </th>
                                 <th class="min-w-[180px] px-5 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
-                                    Server / Aplikasi
+                                    Server / Aplikasi Laporan
                                 </th>
                                 <th class="w-[100px] px-5 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-500">
                                     Foto
@@ -453,6 +453,41 @@
                                                 </div>
                                             </div>
                                         @endif
+                                        @if($report->duty)
+                                        <div class="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <span class="font-semibold text-slate-700">
+                                                    Klasifikasi:
+                                                </span>
+
+                                                @if($report->duty->classification)
+                                                    <span class="rounded-full bg-blue-100 px-2 py-0.5 font-semibold text-blue-700">
+                                                        {{ $report->duty->classification->name }}
+                                                    </span>
+                                                @else
+                                                    <span class="text-slate-400">
+                                                        Tanpa klasifikasi
+                                                    </span>
+                                                @endif
+                                            </div>
+
+                                            <div class="mt-2 grid gap-1">
+                                                <div>
+                                                    <span class="font-semibold text-slate-700">
+                                                        Jenis Objek:
+                                                    </span>
+                                                    {{ $report->duty->object_type_label ?? '-' }}
+                                                </div>
+
+                                                <div>
+                                                    <span class="font-semibold text-slate-700">
+                                                        Objek:
+                                                    </span>
+                                                    {{ $report->duty->work_object_label ?? '-' }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
                                     </td>
 
                                     <td class="px-5 py-4 align-top">

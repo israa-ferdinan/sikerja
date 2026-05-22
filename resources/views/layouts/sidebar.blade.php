@@ -55,6 +55,13 @@
                 </x-sidebar-link>
 
                 <x-sidebar-link
+                    :href="route('admin.master-data.duty-classifications.index')"
+                    :active="request()->routeIs('admin.master-data.duty-classifications.index.*')"
+                >
+                    Klasifikasi Tupoksi
+                </x-sidebar-link>
+
+                <x-sidebar-link
                     :href="route('admin.master-data.server.index')"
                     :active="request()->routeIs('admin.master-data.server.*')"
                 >

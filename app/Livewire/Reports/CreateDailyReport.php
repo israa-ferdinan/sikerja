@@ -91,7 +91,7 @@ class CreateDailyReport extends Component
         }
 
         $this->duties = $employee->duties()
-            ->with('unit')
+            ->with(['unit', 'classification', 'server', 'application'])
             ->orderBy('name')
             ->get();
     }
@@ -214,7 +214,7 @@ class CreateDailyReport extends Component
             return;
         }
 
-        $this->form['duty_id'] = $lastReport->duty_id ? (string) $lastReport->duty_id : '';
+        $this->selected_duty = $lastReport->duty_id ? 'personal:' . $lastReport->duty_id : null;
         $this->form['server_id'] = $lastReport->server_id ? (string) $lastReport->server_id : '';
         $this->form['application_id'] = $lastReport->application_id ? (string) $lastReport->application_id : '';
         $this->form['title'] = $lastReport->title ?? '';
@@ -384,12 +384,23 @@ class CreateDailyReport extends Component
 
         $duty = null;
 
-        if (! empty($this->form['duty_id'])) {
+        $selected = $this->parseSelectedDuty();
+
+        if ($selected['type'] === 'personal' && $selected['id']) {
             $employee = Auth::user()?->employee;
 
             $duty = $employee?->duties()
-                ->where('duties.id', $this->form['duty_id'])
+                ->where('duties.id', $selected['id'])
                 ->first();
+        }
+
+        if ($selected['type'] === 'delegation' && $selected['id']) {
+            $delegation = DutyDelegation::query()
+                ->with('duty')
+                ->where('id', $selected['id'])
+                ->first();
+
+            $duty = $delegation?->duty;
         }
 
         return [
@@ -439,17 +450,26 @@ class CreateDailyReport extends Component
             ->toArray();
 
         $this->personalDuties = JobDuty::query()
+            ->with(['classification', 'server', 'application'])
             ->whereIn('id', $personalDutyIds)
             ->orderBy('name')
-            ->get(['id', 'name'])
+            ->get()
             ->map(fn ($duty) => [
                 'id' => $duty->id,
                 'name' => $duty->name,
+                'classification_name' => $duty->classification?->name,
+                'object_type_label' => $duty->object_type_label,
+                'work_object_label' => $duty->work_object_label,
             ])
             ->toArray();
 
         $this->delegatedDuties = DutyDelegation::query()
-            ->with(['duty:id,name', 'ownerEmployee:id,name'])
+            ->with([
+                'duty.classification',
+                'duty.server',
+                'duty.application',
+                'ownerEmployee:id,name',
+            ])
             ->where('delegate_employee_id', $employee->id)
             ->where('is_active', true)
             ->whereDate('start_date', '<=', $reportDate)
@@ -467,6 +487,9 @@ class CreateDailyReport extends Component
                 'owner_name' => $delegation->ownerEmployee?->name ?? '-',
                 'start_date' => optional($delegation->start_date)->format('Y-m-d'),
                 'end_date' => optional($delegation->end_date)->format('Y-m-d'),
+                'classification_name' => $delegation->duty?->classification?->name,
+                'object_type_label' => $delegation->duty?->object_type_label ?? '-',
+                'work_object_label' => $delegation->duty?->work_object_label ?? '-',
             ])
             ->toArray();
     }
@@ -495,6 +518,60 @@ class CreateDailyReport extends Component
             'type' => $type,
             'id' => (int) $id,
         ];
+    }
+
+    public function getSelectedDutyInfoProperty(): ?array
+    {
+        $selected = $this->parseSelectedDuty();
+
+        if (! $selected['type'] || ! $selected['id']) {
+            return null;
+        }
+
+        if ($selected['type'] === 'personal') {
+            $duty = JobDuty::query()
+                ->with(['classification', 'server', 'application'])
+                ->find($selected['id']);
+
+            if (! $duty) {
+                return null;
+            }
+
+            return [
+                'name' => $duty->name,
+                'source' => 'Tupoksi Pribadi',
+                'owner_name' => null,
+                'classification_name' => $duty->classification?->name ?? 'Tanpa klasifikasi',
+                'object_type_label' => $duty->object_type_label,
+                'work_object_label' => $duty->work_object_label,
+            ];
+        }
+
+        if ($selected['type'] === 'delegation') {
+            $delegation = DutyDelegation::query()
+                ->with([
+                    'duty.classification',
+                    'duty.server',
+                    'duty.application',
+                    'ownerEmployee:id,name',
+                ])
+                ->find($selected['id']);
+
+            if (! $delegation || ! $delegation->duty) {
+                return null;
+            }
+
+            return [
+                'name' => $delegation->duty->name,
+                'source' => 'Tupoksi Delegasi',
+                'owner_name' => $delegation->ownerEmployee?->name,
+                'classification_name' => $delegation->duty->classification?->name ?? 'Tanpa klasifikasi',
+                'object_type_label' => $delegation->duty->object_type_label,
+                'work_object_label' => $delegation->duty->work_object_label,
+            ];
+        }
+
+        return null;
     }
 
     private function getCurrentReportDate(): string
