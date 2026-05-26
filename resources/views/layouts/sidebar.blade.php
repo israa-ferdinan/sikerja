@@ -122,6 +122,13 @@
                     Delegasi Tupoksi
                 </x-sidebar-link>
 
+                <x-sidebar-link
+                    :href="route('admin.unit-targets.index')"
+                    :active="request()->routeIs('admin.unit-targets.*')"
+                >
+                    Target Unit
+                </x-sidebar-link>
+
                 <div class="pt-4 pb-1">
                     <p class="px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
                         Log
@@ -163,6 +170,13 @@
                     :active="request()->routeIs('kanit.duty-delegations.index.*')"
                 >
                     Delegasi Tupoksi
+                </x-sidebar-link>
+
+                <x-sidebar-link
+                    :href="route('kanit.unit-targets.index')"
+                    :active="request()->routeIs('kanit.unit-targets.*')"
+                >
+                    Target Unit
                 </x-sidebar-link>
 
                 <x-sidebar-link
