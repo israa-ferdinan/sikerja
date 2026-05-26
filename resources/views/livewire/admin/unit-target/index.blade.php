@@ -487,6 +487,106 @@
                 </div>
             </div>
 
+            @if ($targetAchievementSummary)
+                <div class="mt-5 rounded-lg border border-gray-200 bg-white p-4">
+                    <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-900">
+                                Ringkasan Capaian Target
+                            </h3>
+                            <p class="mt-1 text-xs text-gray-500">
+                                Perhitungan berdasarkan laporan harian yang sesuai dengan unit, periode, klasifikasi, dan objek pekerjaan target.
+                            </p>
+                        </div>
+
+                        <span class="inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold {{ $targetAchievementSummary['status_badge_class'] }}">
+                            {{ $targetAchievementSummary['status_label'] }}
+                        </span>
+                    </div>
+
+                    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        <div class="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                            <p class="text-xs font-medium text-gray-500">
+                                Target
+                            </p>
+                            <p class="mt-1 text-xl font-bold text-gray-900">
+                                {{ number_format($targetAchievementSummary['target_quantity']) }}
+                            </p>
+                            <p class="mt-1 text-xs text-gray-500">
+                                target pekerjaan
+                            </p>
+                        </div>
+
+                        <div class="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                            <p class="text-xs font-medium text-gray-500">
+                                Realisasi
+                            </p>
+                            <p class="mt-1 text-xl font-bold text-gray-900">
+                                {{ number_format($targetAchievementSummary['achievement_count']) }}
+                            </p>
+                            <p class="mt-1 text-xs text-gray-500">
+                                laporan cocok
+                            </p>
+                        </div>
+
+                        <div class="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                            <p class="text-xs font-medium text-gray-500">
+                                Sisa Target
+                            </p>
+                            <p class="mt-1 text-xl font-bold text-gray-900">
+                                {{ number_format($targetAchievementSummary['remaining_target']) }}
+                            </p>
+                            <p class="mt-1 text-xs text-gray-500">
+                                menuju tercapai
+                            </p>
+                        </div>
+
+                        <div class="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                            <p class="text-xs font-medium text-gray-500">
+                                Data Dukung
+                            </p>
+                            <p class="mt-1 text-xl font-bold text-gray-900">
+                                {{ $detailTarget->active_supports_count ?? $detailTarget->activeSupports->count() }}
+                            </p>
+                            <p class="mt-1 text-xs text-gray-500">
+                                bukti aktif
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <div class="mb-2 flex items-center justify-between text-xs text-gray-600">
+                            <span>
+                                Progress Capaian
+                            </span>
+                            <span class="font-semibold text-gray-800">
+                                {{ $targetAchievementSummary['achievement_percentage'] }}%
+                            </span>
+                        </div>
+
+                        <div class="h-3 overflow-hidden rounded-full bg-gray-100">
+                            <div
+                                class="h-3 rounded-full bg-blue-600 transition-all"
+                                style="width: {{ $targetAchievementSummary['achievement_percentage'] }}%"
+                            ></div>
+                        </div>
+
+                        <div class="mt-2 flex flex-col gap-1 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between">
+                            <span>
+                                Periode: {{ $targetAchievementSummary['period_label'] }}
+                            </span>
+
+                            <span>
+                                {{ number_format($targetAchievementSummary['achievement_count']) }}
+                                dari
+                                {{ number_format($targetAchievementSummary['target_quantity']) }}
+                                target pekerjaan tercatat.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <div class="mt-5 rounded-lg border border-gray-200">
                 <div class="border-b border-gray-200 bg-gray-50 px-4 py-3">
                     <h3 class="text-sm font-semibold text-gray-900">
@@ -564,6 +664,262 @@
                 @endif
 
             </div>
+                        <div class="mt-5 rounded-lg border border-gray-200">
+                            <div class="flex flex-col gap-3 border-b border-gray-200 bg-gray-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <h3 class="text-sm font-semibold text-gray-900">
+                                        Data Dukung Target
+                                    </h3>
+                                    <p class="mt-1 text-xs text-gray-500">
+                                        File, link, catatan, atau bukti tambahan yang mendukung capaian target ini.
+                                    </p>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    wire:click="openSupportForm"
+                                    class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-blue-700"
+                                >
+                                    + Tambah Data Dukung
+                                </button>
+                            </div>
+
+                            @if ($showSupportForm)
+                                <div class="border-b border-gray-200 bg-white px-4 py-4">
+                                    <div class="mb-4">
+                                        <h4 class="text-sm font-semibold text-gray-900">
+                                            {{ $isEditingSupport ? 'Edit Data Dukung' : 'Tambah Data Dukung' }}
+                                        </h4>
+                                        <p class="mt-1 text-xs text-gray-500">
+                                            {{ $isEditingSupport ? 'Perbarui informasi data dukung target.' : 'Tambahkan file, link, catatan, atau bukti pendukung target.' }}
+                                        </p>
+                                    </div>
+                                    <form wire:submit.prevent="{{ $isEditingSupport ? 'updateSupport' : 'saveSupport' }}" class="space-y-4">
+                                        <div class="grid gap-4 md:grid-cols-2">
+                                            <div>
+                                                <label class="mb-1 block text-sm font-medium text-gray-700">
+                                                    Jenis Data Dukung
+                                                </label>
+
+                                                <select
+                                                    wire:model.live="support_type"
+                                                    class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                                >
+                                                    <option value="note">Catatan</option>
+                                                    <option value="file">File Dokumen</option>
+                                                    <option value="link">Link</option>
+                                                    <option value="other">Bukti Lainnya</option>
+                                                </select>
+
+                                                @error('support_type')
+                                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                                @enderror
+                                            </div>
+
+                                            <div>
+                                                <label class="mb-1 block text-sm font-medium text-gray-700">
+                                                    Judul
+                                                </label>
+
+                                                <input
+                                                    type="text"
+                                                    wire:model.defer="support_title"
+                                                    class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                                    placeholder="Contoh: Screenshot hasil backup database"
+                                                >
+
+                                                @error('support_title')
+                                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                                @enderror
+                                            </div>
+                                        </div>
+
+                                        @if ($support_type === 'file')
+                                            <div>
+                                                <label class="mb-1 block text-sm font-medium text-gray-700">
+                                                    File
+                                                </label>
+
+                                                <input
+                                                    type="file"
+                                                    wire:model="support_file"
+                                                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                                >
+
+                                                <p class="mt-1 text-xs text-gray-500">
+                                                    Format: PDF, Word, Excel, PNG, JPG, JPEG. Maksimal 10 MB.
+                                                </p>
+
+                                                @if ($isEditingSupport)
+                                                    <p class="mt-1 text-xs text-amber-600">
+                                                        Kosongkan file jika tidak ingin mengganti file lama.
+                                                    </p>
+                                                @endif
+
+                                                <div wire:loading wire:target="support_file" class="mt-2 text-xs text-blue-600">
+                                                    Mengunggah file...
+                                                </div>
+
+                                                @error('support_file')
+                                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                                @enderror
+                                            </div>
+                                        @endif
+
+                                        @if ($support_type === 'link')
+                                            <div>
+                                                <label class="mb-1 block text-sm font-medium text-gray-700">
+                                                    Link
+                                                </label>
+
+                                                <input
+                                                    type="url"
+                                                    wire:model.defer="support_url"
+                                                    class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                                    placeholder="https://..."
+                                                >
+
+                                                @error('support_url')
+                                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                                @enderror
+                                            </div>
+                                        @endif
+
+                                        <div>
+                                            <label class="mb-1 block text-sm font-medium text-gray-700">
+                                                Catatan / Deskripsi
+                                            </label>
+
+                                            <textarea
+                                                wire:model.defer="support_description"
+                                                rows="3"
+                                                class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                                placeholder="Tambahkan keterangan data dukung"
+                                            ></textarea>
+
+                                            @error('support_description')
+                                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                            @enderror
+                                        </div>
+
+                                        <div class="flex items-center justify-end gap-2">
+                                            <button
+                                                type="button"
+                                                wire:click="cancelSupportForm"
+                                                class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                                            >
+                                                Batal
+                                            </button>
+
+                                            <button
+                                                type="submit"
+                                                wire:loading.attr="disabled"
+                                                wire:target="saveSupport,support_file"
+                                                class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                            >
+                                                <span wire:loading.remove wire:target="saveSupport,updateSupport">
+                                                    {{ $isEditingSupport ? 'Update Data Dukung' : 'Simpan Data Dukung' }}
+                                                </span>
+
+                                                <span wire:loading wire:target="saveSupport,updateSupport">
+                                                    Menyimpan...
+                                                </span>
+
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            @endif
+
+                            <div class="divide-y divide-gray-100 bg-white">
+                                @forelse ($detailTarget->activeSupports as $support)
+                                    <div class="px-4 py-4">
+                                        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                            <div class="min-w-0">
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium {{ $support->badge_class }}">
+                                                        {{ $support->support_type_label }}
+                                                    </span>
+
+                                                    <h4 class="text-sm font-semibold text-gray-900">
+                                                        {{ $support->title }}
+                                                    </h4>
+                                                </div>
+
+                                                @if ($support->description)
+                                                    <p class="mt-2 text-sm text-gray-600">
+                                                        {{ $support->description }}
+                                                    </p>
+                                                @endif
+
+                                                <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+                                                    <span>
+                                                        Diunggah oleh:
+                                                        <span class="font-medium text-gray-700">
+                                                            {{ $support->uploader?->name ?? '-' }}
+                                                        </span>
+                                                    </span>
+
+                                                    <span>
+                                                        {{ $support->created_at?->format('d/m/Y H:i') }}
+                                                    </span>
+
+                                                    @if ($support->file_size)
+                                                        <span>
+                                                            Ukuran: {{ $support->formatted_file_size }}
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            </div>
+
+                                            <div class="flex shrink-0 items-center gap-2">
+                                                @if ($support->support_type === 'file' && $support->file_url)
+                                                    <a
+                                                        href="{{ $support->file_url }}"
+                                                        target="_blank"
+                                                        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+                                                    >
+                                                        Lihat File
+                                                    </a>
+                                                @endif
+
+                                                @if ($support->support_type === 'link' && $support->url)
+                                                    <a
+                                                        href="{{ $support->url }}"
+                                                        target="_blank"
+                                                        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+                                                    >
+                                                        Buka Link
+                                                    </a>
+                                                @endif
+
+                                                <button
+                                                    type="button"
+                                                    wire:click="editSupport({{ $support->id }})"
+                                                    class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 transition hover:bg-blue-100"
+                                                >
+                                                    Edit
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    wire:click="deleteSupport({{ $support->id }})"
+                                                    wire:confirm="Yakin mau hapus data dukung ini?"
+                                                    class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700 transition hover:bg-red-100"
+                                                >
+                                                    Hapus
+                                                </button>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <div class="px-4 py-8 text-center text-sm text-gray-500">
+                                        Belum ada data dukung untuk target ini.
+                                    </div>
+                                @endforelse
+                            </div>
+                        </div>
         </div>
     @endif
 
@@ -734,8 +1090,9 @@
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Objek</th>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Jumlah</th>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Preview Capaian</th>
-                        <th class="px-4 py-3 text-center font-semibold text-gray-600">Status</th>
-                        <th class="px-4 py-3 text-right font-semibold text-gray-600">Aksi</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Data Dukung</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-600">Aksi</th>
                     </tr>
                 </thead>
 
@@ -822,6 +1179,13 @@
                             <td class="px-4 py-3 text-center align-top">
                                 <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium {{ $target->status_badge_class }}">
                                     {{ $target->is_active ? 'Aktif' : 'Nonaktif' }}
+                                </span>
+                            </td>
+
+                            <td class="px-4 py-4">
+                                <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium
+                                    {{ ($target->active_supports_count ?? 0) > 0 ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-500' }}">
+                                    {{ $target->active_supports_count ?? 0 }} Data
                                 </span>
                             </td>
 

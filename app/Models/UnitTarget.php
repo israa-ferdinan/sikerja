@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Services\UnitTargetAchievementService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use App\Models\UnitTargetSupport;
 
 class UnitTarget extends Model
 {
@@ -157,123 +159,58 @@ class UnitTarget extends Model
 
     public function getPeriodDateRange(): array
     {
-        $year = (int) $this->target_year;
-
-        if ($this->period_type === 'quarterly') {
-            return match ((int) $this->quarter) {
-                1 => [
-                    now()->setDate($year, 1, 1)->startOfDay(),
-                    now()->setDate($year, 3, 31)->endOfDay(),
-                ],
-                2 => [
-                    now()->setDate($year, 4, 1)->startOfDay(),
-                    now()->setDate($year, 6, 30)->endOfDay(),
-                ],
-                3 => [
-                    now()->setDate($year, 7, 1)->startOfDay(),
-                    now()->setDate($year, 9, 30)->endOfDay(),
-                ],
-                4 => [
-                    now()->setDate($year, 10, 1)->startOfDay(),
-                    now()->setDate($year, 12, 31)->endOfDay(),
-                ],
-                default => [
-                    now()->setDate($year, 1, 1)->startOfDay(),
-                    now()->setDate($year, 12, 31)->endOfDay(),
-                ],
-            };
-        }
-
-        return [
-            now()->setDate($year, 1, 1)->startOfDay(),
-            now()->setDate($year, 12, 31)->endOfDay(),
-        ];
+        return app(UnitTargetAchievementService::class)
+            ->periodDateRange($this);
     }
 
     public function matchingDailyReportsQuery(): Builder
     {
-        [$startDate, $endDate] = $this->getPeriodDateRange();
-
-        return DailyReport::query()
-            ->with([
-                'duty',
-                'unit',
-                'employee',
-            ])
-            ->where('unit_id', $this->unit_id)
-            ->whereBetween('report_date', [
-                $startDate->toDateString(),
-                $endDate->toDateString(),
-            ])
-            ->when($this->duty_classification_id, function ($query) {
-                $query->whereHas('duty', function ($dutyQuery) {
-                    $dutyQuery->where('duty_classification_id', $this->duty_classification_id);
-                });
-            })
-            ->when($this->object_type && $this->object_type !== 'none', function ($query) {
-                $query->whereHas('duty', function ($dutyQuery) {
-                    $dutyQuery->where('object_type', $this->object_type);
-
-                    if ($this->object_type === 'server') {
-                        $dutyQuery->where('server_id', $this->server_id);
-                    }
-
-                    if ($this->object_type === 'application') {
-                        $dutyQuery->where('application_id', $this->application_id);
-                    }
-
-                    if ($this->object_type === 'manual') {
-                        $dutyQuery->where('object_name', $this->object_name);
-                    }
-                });
-            });
+        return app(UnitTargetAchievementService::class)
+            ->matchingDailyReportsQuery($this);
     }
 
     public function getAchievementCountAttribute(): int
     {
-        return $this->matchingDailyReportsQuery()->count();
+        return app(UnitTargetAchievementService::class)
+            ->achievementCount($this);
     }
 
     public function getAchievementPercentageAttribute(): float
     {
-        if ((int) $this->target_quantity <= 0) {
-            return 0;
-        }
-
-        return round(($this->achievement_count / $this->target_quantity) * 100, 2);
+        return app(UnitTargetAchievementService::class)
+            ->achievementPercentage($this);
     }
 
     public function getAchievementStatusLabelAttribute(): string
     {
-        if ($this->achievement_percentage >= 100) {
-            return 'Tercapai';
-        }
-
-        if ($this->achievement_percentage >= 75) {
-            return 'Hampir Tercapai';
-        }
-
-        if ($this->achievement_percentage > 0) {
-            return 'Berjalan';
-        }
-
-        return 'Belum Ada Capaian';
+        return app(UnitTargetAchievementService::class)
+            ->statusLabel($this);
     }
 
     public function getAchievementStatusBadgeClassAttribute(): string
     {
-        if ($this->achievement_percentage >= 100) {
-            return 'bg-green-100 text-green-700';
+        return app(UnitTargetAchievementService::class)
+            ->statusBadgeClass($this);
+    }
+
+    public function supports()
+    {
+        return $this->hasMany(UnitTargetSupport::class);
+    }
+
+    public function activeSupports()
+    {
+        return $this->hasMany(UnitTargetSupport::class)
+            ->where('is_active', true)
+            ->latest();
+    }
+
+    public function getSupportsCountAttribute(): int
+    {
+        if ($this->relationLoaded('supports')) {
+            return $this->supports->count();
         }
 
-        if ($this->achievement_percentage >= 75) {
-            return 'bg-yellow-100 text-yellow-700';
-        }
-
-        if ($this->achievement_percentage > 0) {
-            return 'bg-blue-100 text-blue-700';
-        }
-
-        return 'bg-gray-100 text-gray-600';
+        return $this->supports()->count();
     }
 }

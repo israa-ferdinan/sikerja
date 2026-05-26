@@ -7,15 +7,23 @@ use App\Models\Unit;
 use App\Models\UnitTarget;
 use App\Models\Application;
 use App\Models\Server;
+use App\Models\UnitTargetSupport;
+
 use App\Services\ActivityLogger;
+use App\Services\UnitTargetAchievementService;
+
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\WithFileUploads;
 
 
 class Index extends Component
 {
     use WithPagination;
+    use WithFileUploads;
 
     public string $search = '';
     public ?int $filterYear = null;
@@ -52,6 +60,17 @@ class Index extends Component
     public bool $showDetail = false;
     public ?int $detailTargetId = null;
     public int $detailReportsLimit = 10;
+
+    public bool $showSupportForm = false;
+
+    public string $support_type = 'note';
+    public string $support_title = '';
+    public ?string $support_description = null;
+    public ?string $support_url = null;
+    public $support_file = null;
+
+    public ?int $editingSupportId = null;
+    public bool $isEditingSupport = false;
 
     public function mount(): void
     {
@@ -253,6 +272,68 @@ class Index extends Component
         }
     }
 
+    protected function supportRules(): array
+    {
+        $fileRule = [
+            'nullable',
+            'file',
+            'max:10240',
+            'mimes:pdf,doc,docx,xls,xlsx,png,jpg,jpeg',
+        ];
+
+        if ($this->support_type === 'file' && ! $this->isEditingSupport) {
+            $fileRule[] = 'required';
+        }
+
+        return [
+            'support_type' => [
+                'required',
+                'in:file,link,note,other',
+            ],
+            'support_title' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+            'support_description' => [
+                'nullable',
+                'string',
+                'max:1000',
+                'required_if:support_type,note',
+            ],
+            'support_url' => [
+                'nullable',
+                'url',
+                'max:500',
+                'required_if:support_type,link',
+            ],
+            'support_file' => $fileRule,
+        ];
+    }
+
+    protected function supportMessages(): array
+    {
+        return [
+            'support_type.required' => 'Jenis data dukung wajib dipilih.',
+            'support_type.in' => 'Jenis data dukung tidak valid.',
+
+            'support_title.required' => 'Judul data dukung wajib diisi.',
+            'support_title.max' => 'Judul data dukung maksimal 255 karakter.',
+
+            'support_description.required_if' => 'Catatan wajib diisi jika jenis data dukung adalah catatan.',
+            'support_description.max' => 'Catatan maksimal 1000 karakter.',
+
+            'support_url.required_if' => 'Link wajib diisi jika jenis data dukung adalah link.',
+            'support_url.url' => 'Format link tidak valid.',
+            'support_url.max' => 'Link maksimal 500 karakter.',
+
+            'support_file.required_if' => 'File wajib diunggah jika jenis data dukung adalah file.',
+            'support_file.file' => 'Data yang diunggah harus berupa file.',
+            'support_file.max' => 'Ukuran file maksimal 10 MB.',
+            'support_file.mimes' => 'Format file harus PDF, Word, Excel, PNG, JPG, atau JPEG.',
+        ];
+    }
+
     public function create(): void
     {
         $this->resetForm();
@@ -324,6 +405,8 @@ class Index extends Component
         $this->showDetail = false;
         $this->detailTargetId = null;
         $this->detailReportsLimit = 10;
+
+        $this->resetSupportForm();
     }
 
     public function loadMoreMatchingReports(): void
@@ -414,6 +497,257 @@ class Index extends Component
         }
 
         $this->resetForm();
+    }
+
+    public function openSupportForm(): void
+    {
+        $this->findAccessibleDetailTarget();
+
+        $this->resetSupportForm();
+        $this->showSupportForm = true;
+    }
+
+    public function cancelSupportForm(): void
+    {
+        $this->resetSupportForm();
+    }
+
+    public function deleteSupport(int $supportId): void
+    {
+        $target = $this->findAccessibleDetailTarget();
+
+        $support = UnitTargetSupport::query()
+            ->where('unit_target_id', $target->id)
+            ->where('id', $supportId)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $oldData = $support->toArray();
+
+        $support->update([
+            'is_active' => false,
+        ]);
+
+        ActivityLogger::log(
+            'unit_target_support',
+            'delete',
+            'Menghapus data dukung target: ' . $support->title,
+            $support,
+            [
+                'target' => [
+                    'id' => $target->id,
+                    'name' => $target->target_name,
+                ],
+                'old' => $oldData,
+                'new' => [
+                    'is_active' => false,
+                ],
+            ]
+        );
+
+        session()->flash('success', 'Data dukung target berhasil dihapus.');
+    }
+
+    public function editSupport(int $supportId): void
+    {
+        $target = $this->findAccessibleDetailTarget();
+
+        $support = UnitTargetSupport::query()
+            ->where('unit_target_id', $target->id)
+            ->where('id', $supportId)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $this->resetSupportForm();
+
+        $this->editingSupportId = $support->id;
+        $this->isEditingSupport = true;
+        $this->showSupportForm = true;
+
+        $this->support_type = $support->support_type;
+        $this->support_title = $support->title;
+        $this->support_description = $support->description;
+        $this->support_url = $support->url;
+        $this->support_file = null;
+    }
+
+    public function updateSupport(): void
+    {
+        $target = $this->findAccessibleDetailTarget();
+
+        if (! $this->editingSupportId) {
+            session()->flash('success', 'Data dukung yang akan diedit tidak ditemukan.');
+            return;
+        }
+
+        $support = UnitTargetSupport::query()
+            ->where('unit_target_id', $target->id)
+            ->where('id', $this->editingSupportId)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $validated = $this->validate(
+            $this->supportRules(),
+            $this->supportMessages()
+        );
+
+        $oldData = $support->toArray();
+
+        $filePath = $support->file_path;
+        $fileOriginalName = $support->file_original_name;
+        $fileMimeType = $support->file_mime_type;
+        $fileSize = $support->file_size;
+
+        if ($validated['support_type'] === 'file' && $this->support_file) {
+            $filePath = $this->support_file->store('unit-target-supports', 'public');
+            $fileOriginalName = $this->support_file->getClientOriginalName();
+            $fileMimeType = $this->support_file->getMimeType();
+            $fileSize = $this->support_file->getSize();
+        }
+
+        if ($validated['support_type'] !== 'file') {
+            $filePath = null;
+            $fileOriginalName = null;
+            $fileMimeType = null;
+            $fileSize = null;
+        }
+
+        $url = null;
+
+        if ($validated['support_type'] === 'link') {
+            $url = filled($validated['support_url'] ?? null)
+                ? trim($validated['support_url'])
+                : null;
+        }
+
+        $support->update([
+            'support_type' => $validated['support_type'],
+            'title' => trim($validated['support_title']),
+            'description' => filled($validated['support_description'] ?? null)
+                ? trim($validated['support_description'])
+                : null,
+            'file_path' => $filePath,
+            'file_original_name' => $fileOriginalName,
+            'file_mime_type' => $fileMimeType,
+            'file_size' => $fileSize,
+            'url' => $url,
+        ]);
+
+        ActivityLogger::log(
+            'unit_target_support',
+            'update',
+            'Mengubah data dukung target: ' . $support->title,
+            $support,
+            [
+                'target' => [
+                    'id' => $target->id,
+                    'name' => $target->target_name,
+                ],
+                'old' => $oldData,
+                'new' => $support->fresh()->toArray(),
+            ]
+        );
+
+        $this->resetSupportForm();
+
+        session()->flash('success', 'Data dukung target berhasil diperbarui.');
+    }
+
+    public function saveSupport(): void
+    {
+        $target = $this->findAccessibleDetailTarget();
+
+        $validated = $this->validate(
+            $this->supportRules(),
+            $this->supportMessages()
+        );
+
+        $filePath = null;
+        $fileOriginalName = null;
+        $fileMimeType = null;
+        $fileSize = null;
+
+        if ($validated['support_type'] === 'file') {
+            if (! $this->support_file) {
+                $this->addError('support_file', 'File wajib diunggah jika jenis data dukung adalah file.');
+                return;
+            }
+
+            $filePath = $this->support_file->store('unit-target-supports', 'public');
+            $fileOriginalName = $this->support_file->getClientOriginalName();
+            $fileMimeType = $this->support_file->getMimeType();
+            $fileSize = $this->support_file->getSize();
+        }
+
+         $url = null;
+
+        if ($validated['support_type'] === 'link') {
+            $url = filled($validated['support_url'] ?? null)
+                ? trim($validated['support_url'])
+                : null;
+        }
+
+        $support = UnitTargetSupport::create([
+            'unit_target_id' => $target->id,
+            'unit_id' => $target->unit_id,
+            'uploaded_by' => Auth::id(),
+            'support_type' => $validated['support_type'],
+            'title' => trim($validated['support_title']),
+            'description' => filled($validated['support_description'] ?? null)
+                ? trim($validated['support_description'])
+                : null,
+            'file_path' => $filePath,
+            'file_original_name' => $fileOriginalName,
+            'file_mime_type' => $fileMimeType,
+            'file_size' => $fileSize,
+            'url' => $url,
+            'is_active' => true,
+        ]);
+
+        ActivityLogger::log(
+            'unit_target_support',
+            'create',
+            'Menambahkan data dukung target: ' . $support->title,
+            $support,
+            [
+                'target' => [
+                    'id' => $target->id,
+                    'name' => $target->target_name,
+                ],
+                'new' => $support->toArray(),
+            ]
+        );
+
+        $this->resetSupportForm();
+
+        session()->flash('success', 'Data dukung target berhasil ditambahkan.');
+    }
+
+    private function resetSupportForm(): void
+    {
+        $this->reset([
+            'showSupportForm',
+            'support_type',
+            'support_title',
+            'support_description',
+            'support_url',
+            'support_file',
+            'editingSupportId',
+            'isEditingSupport',
+        ]);
+
+        $this->support_type = 'note';
+        $this->showSupportForm = false;
+        $this->editingSupportId = null;
+        $this->isEditingSupport = false;
+
+        $this->resetValidation([
+            'support_type',
+            'support_title',
+            'support_description',
+            'support_url',
+            'support_file',
+        ]);
     }
 
     private function ensureTargetIsUnique(array $validated): void
@@ -563,6 +897,17 @@ class Index extends Component
         $this->resetValidation();
     }
 
+    private function findAccessibleDetailTarget(): UnitTarget
+    {
+        if (! $this->detailTargetId) {
+            abort(404);
+        }
+
+        return $this->targetQuery()
+            ->whereKey($this->detailTargetId)
+            ->firstOrFail();
+    }
+
     private function targetQuery()
     {
         return UnitTarget::query()
@@ -573,6 +918,10 @@ class Index extends Component
                 'application',
                 'creator',
                 'updater',
+            ])
+            ->withCount([
+                'supports',
+                'activeSupports',
             ])
             ->when($this->isKanit(), function ($query) {
                 $query->where('unit_id', $this->kanitUnitId());
@@ -656,6 +1005,7 @@ class Index extends Component
         $detailTarget = null;
         $matchingReports = collect();
         $matchingReportsTotal = 0;
+        $targetAchievementSummary = null;
 
         if ($this->showDetail && $this->detailTargetId) {
             $detailTarget = $this->targetQuery()
@@ -663,9 +1013,19 @@ class Index extends Component
                 ->first();
 
             if ($detailTarget) {
-                $matchingReportsTotal = $detailTarget->matchingDailyReportsQuery()->count();
+                $detailTarget->load([
+                    'activeSupports.uploader',
+                ]);
 
-                $matchingReports = $detailTarget->matchingDailyReportsQuery()
+                $achievementService = app(UnitTargetAchievementService::class);
+
+                $targetAchievementSummary = $achievementService->summary($detailTarget);
+
+                $matchingReportsQuery = $achievementService->matchingDailyReportsQuery($detailTarget);
+
+                $matchingReportsTotal = (clone $matchingReportsQuery)->count();
+
+                $matchingReports = $matchingReportsQuery
                     ->with([
                         'employee',
                         'duty',
@@ -687,6 +1047,7 @@ class Index extends Component
             'detailTarget' => $detailTarget,
             'matchingReports' => $matchingReports,
             'matchingReportsTotal' => $matchingReportsTotal,
+            'targetAchievementSummary' => $targetAchievementSummary,
         ]);
     }
 }
