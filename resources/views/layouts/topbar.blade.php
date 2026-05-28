@@ -1,21 +1,22 @@
-<header class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
-
+<header class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-3 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-4 sm:px-6 lg:px-8">
     {{-- Mobile menu button --}}
-    <button type="button"
-            class="inline-flex items-center justify-center rounded-md p-2 text-gray-700 hover:bg-gray-100 lg:hidden"
-            @click="sidebarOpen = true">
+    <button
+        type="button"
+        class="inline-flex shrink-0 items-center justify-center rounded-md p-2 text-gray-700 hover:bg-gray-100 lg:hidden"
+        @click="sidebarOpen = true"
+    >
         <span class="sr-only">Open sidebar</span>
         <span class="text-2xl leading-none">☰</span>
     </button>
 
-    <div class="h-6 w-px bg-gray-200 lg:hidden"></div>
+    <div class="h-6 w-px shrink-0 bg-gray-200 lg:hidden"></div>
 
-    <div class="flex flex-1 items-center justify-between">
-        <div>
-            <h2 class="text-sm font-semibold text-gray-700">
+    <div class="flex min-w-0 flex-1 items-center justify-between gap-3">
+        <div class="min-w-0 flex-1">
+            <h2 class="truncate text-sm font-semibold text-gray-700">
                 Aplikasi Laporan Kerja Kantor
             </h2>
-            <p class="text-xs text-gray-500">
+            <p class="truncate text-xs text-gray-500">
                 {{ now()->translatedFormat('l, d F Y') }}
             </p>
         </div>
@@ -23,38 +24,44 @@
         @php
             $user = auth()->user();
             $userName = $user?->name ?? 'User';
+
             $initials = collect(explode(' ', $userName))
                 ->filter()
                 ->take(2)
                 ->map(fn ($word) => mb_substr($word, 0, 1))
                 ->implode('');
+
+            $initials = $initials ?: 'U';
         @endphp
 
-        <div class="relative" x-data="{ userMenuOpen: false }">
+        <div class="relative shrink-0" x-data="{ userMenuOpen: false }">
             <button
                 type="button"
                 @click="userMenuOpen = !userMenuOpen"
-                class="flex items-center gap-3 rounded-full border border-gray-200 bg-white py-1.5 pl-1.5 pr-3 shadow-sm transition hover:bg-gray-50"
+                class="flex max-w-[220px] items-center gap-2 rounded-full border border-gray-200 bg-white py-1.5 pl-1.5 pr-2 shadow-sm transition hover:bg-gray-50 sm:gap-3 sm:pr-3"
             >
-                <span class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-800 text-xs font-bold uppercase text-white ring-2 ring-white">
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-bold uppercase leading-none text-white ring-2 ring-white">
                     {{ $initials }}
                 </span>
 
-                <span class="hidden text-left sm:block">
-                    <span class="block max-w-40 truncate text-sm font-semibold text-gray-700">
+                {{-- Nama user disembunyikan di mobile dan layar kecil --}}
+                <span class="hidden min-w-0 text-left xl:block">
+                    <span class="block max-w-36 truncate text-sm font-semibold text-gray-700">
                         {{ $userName }}
                     </span>
-                    <span class="block text-xs capitalize text-gray-500">
+                    <span class="block truncate text-xs capitalize text-gray-500">
                         {{ $user?->role?->name ?? '-' }}
                     </span>
                 </span>
 
-                <svg class="h-4 w-4 text-gray-400 transition"
-                     :class="{ 'rotate-180': userMenuOpen }"
-                     fill="none"
-                     stroke="currentColor"
-                     stroke-width="2"
-                     viewBox="0 0 24 24">
+                <svg
+                    class="h-4 w-4 shrink-0 text-gray-400 transition"
+                    :class="{ 'rotate-180': userMenuOpen }"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                >
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
             </button>
@@ -63,19 +70,19 @@
                 x-show="userMenuOpen"
                 x-transition.origin.top.right
                 @click.outside="userMenuOpen = false"
-                class="absolute right-0 z-50 mt-3 w-72 rounded-2xl border border-gray-100 bg-white p-4 shadow-xl"
+                class="fixed left-4 right-4 top-20 z-50 rounded-2xl border border-gray-100 bg-white p-4 shadow-xl sm:left-auto sm:right-6 sm:w-72 lg:right-8"
                 style="display: none;"
             >
                 <div class="flex items-center gap-3 border-b border-gray-100 pb-4">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-sm font-bold uppercase text-white">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-800 text-sm font-bold uppercase leading-none text-white">
                         {{ $initials }}
                     </div>
 
-                    <div class="min-w-0">
+                    <div class="min-w-0 flex-1">
                         <p class="truncate text-sm font-semibold text-gray-900">
                             {{ $userName }}
                         </p>
-                        <p class="text-xs capitalize text-gray-500">
+                        <p class="truncate text-xs capitalize text-gray-500">
                             {{ $user?->role?->name ?? '-' }}
                         </p>
                     </div>

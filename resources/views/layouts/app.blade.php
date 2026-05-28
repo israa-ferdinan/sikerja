@@ -12,7 +12,7 @@
 <body
     x-data="{ sidebarOpen: false }"
     x-bind:class="{ 'overflow-hidden': sidebarOpen }"
-    class="font-sans antialiased bg-gray-100"
+    class="overflow-x-hidden font-sans antialiased bg-gray-100"
 >
     <div class="min-h-screen">
 
@@ -21,12 +21,12 @@
             @include('layouts.sidebar')
         @endauth
 
-        <div class="lg:pl-64">
+        <div class="min-w-0 lg:pl-64">
             @auth
                 @include('layouts.topbar')
             @endauth
 
-            <main class="p-4 sm:p-6 lg:p-8">
+            <main class="min-w-0 overflow-x-hidden p-4 sm:p-6 lg:p-8">
                 {{ $slot }}
             </main>
         </div>
