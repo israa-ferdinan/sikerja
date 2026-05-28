@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         'role' => \App\Http\Middleware\RoleMiddleware::class,
         'kanit' => EnsureUserIsKanit::class,
         'active.user' => EnsureUserIsActive::class,
+        'force.password.change' => \App\Http\Middleware\ForcePasswordChange::class,
     ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

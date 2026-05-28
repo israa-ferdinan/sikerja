@@ -54,6 +54,10 @@ class LoginForm extends Form
             ]);
         }
 
+        $user->forceFill([
+            'last_login_at' => now(),
+        ])->save();
+
         RateLimiter::clear($this->throttleKey());
     }
 

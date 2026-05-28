@@ -26,7 +26,7 @@
                     type="text"
                     wire:model.live.debounce.500ms="search"
                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm md:w-1/3"
-                    placeholder="Cari nama, NIP, jabatan, atau unit..."
+                    placeholder="Cari nama, NIP, No HP, email, jabatan, atau unit..."
                 >
             </div>
 
@@ -40,6 +40,7 @@
                             <th class="border-b px-3 py-3">Unit</th>
                             <th class="border-b px-3 py-3">Jabatan</th>
                             <th class="border-b px-3 py-3">No HP</th>
+                            <th class="border-b px-3 py-3">Email</th>
                             <th class="border-b px-3 py-3">Status</th>
                             <th class="border-b px-3 py-3">Aksi</th>
                         </tr>
@@ -70,6 +71,10 @@
 
                                 <td class="border-b px-3 py-3">
                                     {{ $pegawai->phone ?? '-' }}
+                                </td>
+
+                                <td class="border-b px-3 py-3">
+                                    {{ $pegawai->email ?? '-' }}
                                 </td>
 
                                 <td class="border-b px-3 py-3">
@@ -116,7 +121,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="px-3 py-6 text-center text-gray-500">
+                                <td colspan="9 class="px-3 py-6 text-center text-gray-500">
                                     Data pegawai belum tersedia.
                                 </td>
                             </tr>
@@ -240,6 +245,23 @@
                             >
 
                             @error('phone')
+                                <div class="mt-1 text-sm text-red-600">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-gray-700">
+                                Email Pegawai
+                            </label>
+
+                            <input
+                                type="email"
+                                wire:model.defer="email"
+                                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                                placeholder="Contoh: pegawai@domain.go.id"
+                            >
+
+                            @error('email')
                                 <div class="mt-1 text-sm text-red-600">{{ $message }}</div>
                             @enderror
                         </div>

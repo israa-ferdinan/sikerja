@@ -20,6 +20,7 @@ class Index extends Component
     public $name;
     public $nip;
     public $phone;
+    public $email;
     public $is_active = true;
     public ?int $position_id = null;
 
@@ -34,6 +35,7 @@ class Index extends Component
             'nip' => 'nullable|string|max:50',
             'position_id' => ['nullable', 'exists:positions,id'],
             'phone' => 'nullable|string|max:30',
+            'email' => 'nullable|email|max:255',
             'is_active' => 'boolean',
         ];
     }
@@ -60,6 +62,7 @@ class Index extends Component
         $this->nip = $pegawai->nip;
         $this->position_id = $pegawai->position_id;
         $this->phone = $pegawai->phone;
+        $this->email = $pegawai->email;
         $this->is_active = (bool) $pegawai->is_active;
 
         $this->isEdit = true;
@@ -76,6 +79,7 @@ class Index extends Component
             'nip' => $this->nip,
             'position_id' => $this->position_id,
             'phone' => $this->phone,
+            'email' => $this->email,
             'is_active' => $this->is_active,
         ];
 
@@ -147,6 +151,7 @@ class Index extends Component
             'nip',
             'position_id',
             'phone',
+            'email',
             'isEdit',
         ]);
 
@@ -163,6 +168,8 @@ class Index extends Component
                 $query->where(function ($q) {
                     $q->where('name', 'like', '%' . $this->search . '%')
                         ->orWhere('nip', 'like', '%' . $this->search . '%')
+                        ->orWhere('phone', 'like', '%' . $this->search . '%')
+                        ->orWhere('email', 'like', '%' . $this->search . '%')
                         ->orWhereHas('unit', function ($unitQuery) {
                             $unitQuery->where('name', 'like', '%' . $this->search . '%');
                         })

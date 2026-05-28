@@ -11,6 +11,7 @@
 
 <body
     x-data="{ sidebarOpen: false }"
+    x-bind:class="{ 'overflow-hidden': sidebarOpen }"
     class="font-sans antialiased bg-gray-100"
 >
     <div class="min-h-screen">

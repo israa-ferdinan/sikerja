@@ -22,6 +22,7 @@ class Index extends Component
 
     public string $new_password = '';
     public string $new_password_confirmation = '';
+    public bool $must_change_password = true;
 
     protected string $paginationTheme = 'tailwind';
 
@@ -49,11 +50,22 @@ class Index extends Component
     {
         $user = User::findOrFail($userId);
 
+        if (auth()->id() === $user->id) {
+            session()->flash('error', 'Password akun sendiri hanya bisa diubah melalui menu Profil Saya.');
+            return;
+        }
+
+        if ($user->role?->name === 'admin') {
+            session()->flash('error', 'Password akun Admin lain tidak bisa direset dari User Management.');
+            return;
+        }
+
         $this->selectedUserId = $user->id;
         $this->selectedUserName = $user->name;
 
         $this->new_password = 'password123';
         $this->new_password_confirmation = 'password123';
+        $this->must_change_password = true;
 
         $this->showResetPasswordModal = true;
 
@@ -69,18 +81,35 @@ class Index extends Component
                 'min:8',
                 'confirmed',
             ],
+            'must_change_password' => [
+                'boolean',
+            ],
         ], [
             'new_password.required' => 'Password baru wajib diisi.',
             'new_password.min' => 'Password minimal 8 karakter.',
             'new_password.confirmed' => 'Konfirmasi password tidak cocok.',
         ]);
 
-        $user = User::findOrFail($this->selectedUserId);
+        $user = User::with('role')->findOrFail($this->selectedUserId);
+
+        if (auth()->id() === $user->id) {
+            session()->flash('error', 'Password akun sendiri hanya bisa diubah melalui menu Profil Saya.');
+            $this->closeResetPasswordModal();
+            return;
+        }
+
+        if ($user->role?->name === 'admin') {
+            session()->flash('error', 'Password akun Admin lain tidak bisa direset dari User Management.');
+            $this->closeResetPasswordModal();
+            return;
+        }
 
         $oldValues = $user->makeHidden(['password', 'remember_token'])->toArray();
 
         $user->update([
             'password' => Hash::make($validated['new_password']),
+            'must_change_password' => $this->must_change_password,
+            'password_changed_at' => null,
         ]);
 
         ActivityLogger::log(
@@ -95,6 +124,8 @@ class Index extends Component
                 'email' => $user->email,
                 'username' => $user->username ?? null,
                 'password_reset' => true,
+                'must_change_password' => $this->must_change_password,
+                'password_changed_at' => null,
                 'reset_at' => now()->toDateTimeString(),
             ]
         );
@@ -112,17 +143,25 @@ class Index extends Component
             'selectedUserName',
             'new_password',
             'new_password_confirmation',
+            'must_change_password',
         ]);
+
+        $this->must_change_password = true;
 
         $this->resetValidation();
     }
 
     public function toggleUserStatus(int $userId): void
     {
-        $user = User::findOrFail($userId);
+        $user = User::with('role')->findOrFail($userId);
 
         if (auth()->id() === $user->id && $user->is_active) {
             session()->flash('error', 'Akun yang sedang digunakan tidak bisa dinonaktifkan.');
+            return;
+        }
+
+        if ($user->role?->name === 'admin') {
+            session()->flash('error', 'Akun Admin tidak bisa diaktifkan/nonaktifkan dari User Management.');
             return;
         }
 

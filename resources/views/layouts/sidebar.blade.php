@@ -1,5 +1,5 @@
-<aside class="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col bg-white border-r border-gray-200">
-    <div class="flex min-h-0 flex-1 flex-col">
+<aside class="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col overflow-hidden bg-white border-r border-gray-200">
+   <div class="flex min-h-0 h-full flex-1 flex-col">
         <div class="flex h-16 items-center border-b px-6">
             <div>
                 <h1 class="text-base font-bold text-gray-800">
@@ -11,7 +11,8 @@
             </div>
         </div>
 
-        <nav class="flex-1 space-y-1 px-4 py-5">
+        <nav class="min-h-0 flex-1 space-y-1 overflow-y-auto px-4 py-5">
+
             @if(auth()->user()->isAdmin())
                 <x-sidebar-link
                     :href="route('admin.dashboard')"

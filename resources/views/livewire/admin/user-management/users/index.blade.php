@@ -103,9 +103,18 @@
                     @forelse ($users as $user)
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3">
-                                <div class="font-semibold text-gray-900">
-                                    {{ $user->name }}
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <div class="font-semibold text-gray-900">
+                                        {{ $user->name }}
+                                    </div>
+
+                                    @if (auth()->id() === $user->id)
+                                        <span class="inline-flex rounded-full bg-indigo-100 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-700">
+                                            Akun Anda
+                                        </span>
+                                    @endif
                                 </div>
+
                                 <div class="mt-1 text-xs text-gray-500">
                                     ID User: {{ $user->id }}
                                 </div>
@@ -132,6 +141,14 @@
                                 @endif
                             </td>
 
+                            @if ($user->role?->name === 'admin')
+                                <div class="mt-1">
+                                    <span class="inline-flex rounded-full bg-gray-100 px-3 py-1 text-[11px] font-semibold text-gray-600">
+                                        Akun dilindungi
+                                    </span>
+                                </div>
+                            @endif
+
                             <td class="px-4 py-3">
                                 @if ($user->employee)
                                     <div class="font-medium text-gray-900">
@@ -154,38 +171,68 @@
                             </td>
 
                             <td class="px-4 py-3 text-center">
-                                @if ($user->is_active)
-                                    <span class="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-                                        Aktif
-                                    </span>
-                                @else
-                                    <span class="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
-                                        Nonaktif
-                                    </span>
-                                @endif
+                                <div class="flex flex-col items-center gap-1">
+                                    @if ($user->is_active)
+                                        <span class="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                                            Aktif
+                                        </span>
+                                    @else
+                                        <span class="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                                            Nonaktif
+                                        </span>
+                                    @endif
+
+                                    @if ($user->must_change_password)
+                                        <span class="inline-flex rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-700">
+                                            Wajib Ganti Password
+                                        </span>
+                                    @endif
+
+                                    @if ($user->last_login_at)
+                                        <span class="text-[11px] text-gray-400">
+                                            Login: {{ $user->last_login_at->format('d/m/Y H:i') }}
+                                        </span>
+                                    @else
+                                        <span class="text-[11px] text-gray-400">
+                                            Belum login
+                                        </span>
+                                    @endif
+                                </div>
                             </td>
 
                             <td class="px-4 py-3 text-right">
-                                <div class="flex justify-end gap-2">
-                                    <button
-                                        type="button"
-                                        wire:click="openResetPasswordModal({{ $user->id }})"
-                                        class="rounded-lg border border-yellow-300 px-3 py-1.5 text-xs font-semibold text-yellow-700 transition hover:bg-yellow-50"
-                                    >
-                                        Reset Password
-                                    </button>
+                                @php
+                                    $isCurrentUser = auth()->id() === $user->id;
+                                    $isAdminUser = $user->role?->name === 'admin';
+                                    $canManageUser = ! $isCurrentUser && ! $isAdminUser;
+                                @endphp
 
-                                    <button
-                                        type="button"
-                                        wire:click="toggleUserStatus({{ $user->id }})"
-                                        wire:confirm="{{ $user->is_active ? 'Yakin ingin menonaktifkan user ini?' : 'Yakin ingin mengaktifkan user ini?' }}"
-                                        class="rounded-lg px-3 py-1.5 text-xs font-semibold transition
-                                            {{ $user->is_active
-                                                ? 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-                                                : 'border border-green-300 text-green-700 hover:bg-green-50' }}"
-                                    >
-                                        {{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
-                                    </button>
+                                <div class="flex justify-end gap-2">
+                                    @if ($canManageUser)
+                                        <button
+                                            type="button"
+                                            wire:click="openResetPasswordModal({{ $user->id }})"
+                                            class="rounded-lg border border-yellow-300 px-3 py-1.5 text-xs font-semibold text-yellow-700 transition hover:bg-yellow-50"
+                                        >
+                                            Reset Password
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            wire:click="toggleUserStatus({{ $user->id }})"
+                                            wire:confirm="{{ $user->is_active ? 'Yakin ingin menonaktifkan user ini?' : 'Yakin ingin mengaktifkan user ini?' }}"
+                                            class="rounded-lg px-3 py-1.5 text-xs font-semibold transition
+                                                {{ $user->is_active
+                                                    ? 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                                                    : 'border border-green-300 text-green-700 hover:bg-green-50' }}"
+                                        >
+                                            {{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                                        </button>
+                                    @else
+                                        <span class="inline-flex rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-500">
+                                            Dilindungi
+                                        </span>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -256,6 +303,23 @@
                             Password default yang disarankan adalah <strong>password123</strong>.
                             Admin bisa menggantinya sebelum menyimpan.
                         </div>
+
+                        <label class="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+                            <input
+                                type="checkbox"
+                                wire:model.defer="must_change_password"
+                                class="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            >
+
+                            <span>
+                                <span class="block text-sm font-semibold text-blue-800">
+                                    Wajib ganti password saat login berikutnya
+                                </span>
+                                <span class="mt-1 block text-xs leading-5 text-blue-700">
+                                    Jika aktif, user akan diarahkan ke halaman Profil Saya dan wajib mengganti password sebelum menggunakan menu aplikasi.
+                                </span>
+                            </span>
+                        </label>
                     </div>
 
                     <div class="flex flex-col-reverse gap-2 border-t border-gray-200 px-5 py-4 sm:flex-row sm:justify-end">

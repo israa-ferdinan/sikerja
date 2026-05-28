@@ -193,6 +193,158 @@
         </x-ui.card>
     </div>
 
+        {{-- Progress Target Unit --}}
+        <x-ui.card>
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">
+                        Progress Target Unit
+                    </h2>
+                    <p class="mt-1 text-sm text-slate-500">
+                        Ringkasan capaian target unit tahun berjalan berdasarkan laporan harian yang cocok.
+                    </p>
+                </div>
+
+                <a
+                    href="{{ route('kanit.unit-targets.index') }}"
+                    class="inline-flex items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+                >
+                    Lihat Target Unit
+                </a>
+            </div>
+
+            <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-sm font-semibold text-slate-500">
+                        Target Aktif
+                    </p>
+                    <p class="mt-2 text-2xl font-bold text-slate-900">
+                        {{ number_format($activeTargets) }}
+                    </p>
+                    <p class="mt-1 text-xs text-slate-500">
+                        Target aktif pada tahun {{ now()->year }}.
+                    </p>
+                </div>
+
+                <div class="rounded-2xl border border-green-200 bg-green-50 p-4">
+                    <p class="text-sm font-semibold text-green-700">
+                        Tercapai
+                    </p>
+                    <p class="mt-2 text-2xl font-bold text-green-800">
+                        {{ number_format($achievedTargets) }}
+                    </p>
+                    <p class="mt-1 text-xs text-green-700">
+                        Target dengan capaian 100% atau lebih.
+                    </p>
+                </div>
+
+                <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                    <p class="text-sm font-semibold text-amber-700">
+                        Berjalan
+                    </p>
+                    <p class="mt-2 text-2xl font-bold text-amber-800">
+                        {{ number_format($runningTargets) }}
+                    </p>
+                    <p class="mt-1 text-xs text-amber-700">
+                        Target yang masih perlu dikejar.
+                    </p>
+                </div>
+
+                <div class="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                    <p class="text-sm font-semibold text-blue-700">
+                        Rata-rata Capaian
+                    </p>
+                    <p class="mt-2 text-2xl font-bold text-blue-800">
+                        {{ number_format($averageTargetAchievement, 2) }}%
+                    </p>
+                    <p class="mt-1 text-xs text-blue-700">
+                        Rata-rata progress seluruh target aktif.
+                    </p>
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <div class="mb-3 flex items-center justify-between gap-4">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">
+                            Target Perlu Perhatian
+                        </h3>
+                        <p class="mt-1 text-xs text-slate-500">
+                            Diurutkan dari capaian terendah.
+                        </p>
+                    </div>
+                </div>
+
+                @if (count($targetAttentionItems) > 0)
+                    <div class="space-y-3">
+                        @foreach ($targetAttentionItems as $targetItem)
+                            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                                <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <h4 class="truncate text-sm font-bold text-slate-900">
+                                                {{ $targetItem['title'] }}
+                                            </h4>
+
+                                            <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $targetItem['status_badge_class'] }}">
+                                                {{ $targetItem['status_label'] }}
+                                            </span>
+                                        </div>
+
+                                        <p class="mt-1 text-xs text-slate-500">
+                                            Periode: {{ $targetItem['period_label'] }}
+                                        </p>
+                                    </div>
+
+                                    <div class="w-full lg:w-64">
+                                        <div class="mb-1 flex items-center justify-between text-xs">
+                                            <span class="font-semibold text-slate-600">
+                                                {{ number_format($targetItem['achievement_count']) }}
+                                                /
+                                                {{ number_format($targetItem['target_quantity']) }}
+                                            </span>
+                                            <span class="font-bold text-slate-900">
+                                                {{ number_format($targetItem['achievement_percentage'], 2) }}%
+                                            </span>
+                                        </div>
+
+                                        <div class="h-2.5 overflow-hidden rounded-full bg-slate-100">
+                                            <div
+                                                class="h-full rounded-full bg-blue-600"
+                                                style="width: {{ min($targetItem['achievement_percentage'], 100) }}%"
+                                            ></div>
+                                        </div>
+
+                                        <p class="mt-1 text-[11px] text-slate-500">
+                                            Sisa target: {{ number_format($targetItem['remaining_target']) }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+                        @if ($activeTargets > 0)
+                            <p class="text-sm font-semibold text-green-700">
+                                Semua target aktif sudah tercapai atau tidak ada target yang perlu perhatian.
+                            </p>
+                            <p class="mt-1 text-xs text-slate-500">
+                                Tetap pantau target unit secara berkala melalui menu Target Unit.
+                            </p>
+                        @else
+                            <p class="text-sm font-semibold text-slate-700">
+                                Belum ada target aktif tahun ini.
+                            </p>
+                            <p class="mt-1 text-xs text-slate-500">
+                                Target unit yang aktif akan tampil di dashboard Kanit.
+                            </p>
+                        @endif
+                    </div>
+                @endif
+            </div>
+        </x-ui.card>
+
     {{-- Main Actions --}}
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <x-ui.card class="lg:col-span-2">

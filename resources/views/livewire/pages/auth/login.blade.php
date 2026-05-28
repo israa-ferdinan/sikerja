@@ -10,21 +10,32 @@ new class extends Component
 
     public function login(): void
     {
-        $this->validate();
+        try {
+            $this->validate();
 
-        $this->form->authenticate();
+            $this->form->authenticate();
 
-        Session::regenerate();
+            Session::regenerate();
 
-        $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
+            $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->dispatch('login-failed');
+
+            throw $e;
+        } catch (\Throwable $e) {
+            $this->dispatch('login-failed');
+
+            throw $e;
+        }
     }
 }; ?>
-<div class="min-h-screen bg-slate-100">
+<div  x-data="{ loggingIn: false }" x-on:login-failed.window="loggingIn = false" class="min-h-screen bg-slate-100">
     {{-- Login Loading Overlay --}}
     <div
-        wire:loading.flex
-        wire:target="login"
-        class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/40 px-4 backdrop-blur-sm"
+        x-show="loggingIn"
+        x-cloak
+        x-transition.opacity
+        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4 backdrop-blur-sm"
     >
         <div class="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl">
             <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-50">
@@ -136,7 +147,7 @@ new class extends Component
                         </div>
                     @endif
 
-                    <form wire:submit.prevent="login" class="space-y-5">
+                    <form wire:submit.prevent="login" x-on:submit="loggingIn = true" class="space-y-5">
                         {{-- Login Field --}}
                         <div>
                             <label for="login" class="mb-2 block text-sm font-medium text-slate-700">
@@ -155,8 +166,11 @@ new class extends Component
                                     id="login"
                                     type="text"
                                     wire:model.defer="form.email"
+                                    wire:loading.attr="disabled"
+                                    wire:target="login"
+                                    x-bind:disabled="loggingIn"
                                     autocomplete="username"
-                                    class="block w-full rounded-2xl border border-slate-300 bg-white py-3 pl-12 pr-4 text-sm text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                                    class="block w-full rounded-2xl border border-slate-300 bg-white py-3 pl-12 pr-4 text-sm text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
                                     placeholder="Masukkan email atau username"
                                 >
                             </div>
@@ -186,8 +200,11 @@ new class extends Component
                                     id="password"
                                     type="password"
                                     wire:model.defer="form.password"
+                                    wire:loading.attr="disabled"
+                                    wire:target="login"
+                                    x-bind:disabled="loggingIn"
                                     autocomplete="current-password"
-                                    class="block w-full rounded-2xl border border-slate-300 bg-white py-3 pl-12 pr-4 text-sm text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                                    class="block w-full rounded-2xl border border-slate-300 bg-white py-3 pl-12 pr-4 text-sm text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
                                     placeholder="Masukkan password"
                                 >
                             </div>
@@ -204,6 +221,7 @@ new class extends Component
                             type="submit"
                             wire:loading.attr="disabled"
                             wire:target="login"
+                            x-bind:disabled="loggingIn"
                             class="inline-flex w-full items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-70"
                         >
                             <span wire:loading.remove wire:target="login">
@@ -229,3 +247,22 @@ new class extends Component
         </div>
     </div>
 </div>
+@script
+<script>
+    Livewire.hook('request', ({ succeed, fail }) => {
+        succeed(() => {
+            setTimeout(() => {
+                const hasError = document.querySelector('[data-login-error="true"]');
+
+                if (hasError) {
+                    Alpine.store('loginLoading', false);
+                }
+            }, 150);
+        });
+
+        fail(() => {
+            Alpine.store('loginLoading', false);
+        });
+    });
+</script>
+@endscript

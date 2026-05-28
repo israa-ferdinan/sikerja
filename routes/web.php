@@ -32,6 +32,8 @@ use App\Livewire\Reports\ShowDailyReport;
 use App\Livewire\Reports\EditDailyReport;
 use App\Livewire\Reports\ExportMonthlyReport;
 
+use App\Livewire\Profile\ShowProfile;
+
 use App\Services\ActivityLogger;
 
 Route::get('/', function () {
@@ -40,7 +42,7 @@ Route::get('/', function () {
         : redirect()->route('login');
 });
 
-Route::middleware(['auth', 'active.user'])->group(function () {
+Route::middleware(['auth', 'active.user', 'force.password.change'])->group(function () {
     Route::get('/dashboard', function () {
         $role = auth()->user()->role?->name;
 
@@ -51,6 +53,9 @@ Route::middleware(['auth', 'active.user'])->group(function () {
             default => abort(403, 'Role user belum dikenali.'),
         };
     })->name('dashboard');
+
+    Route::get('/profile', ShowProfile::class)
+        ->name('profile.show');
 
     //Route::get('/reports/create', CreateDailyReport::class)->name('reports.create');
 
