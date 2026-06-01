@@ -113,7 +113,7 @@ class MyDailyReports extends Component
 
         $reports = DailyReport::query()
             ->with([
-                'duty',
+                'duty.classification',
                 'server',
                 'application',
                 'photos',
@@ -130,7 +130,11 @@ class MyDailyReports extends Component
                         ->orWhere('description', 'like', '%' . $this->search . '%')
                         ->orWhere('notes', 'like', '%' . $this->search . '%')
                         ->orWhereHas('duty', function ($dutyQuery) {
-                            $dutyQuery->where('name', 'like', '%' . $this->search . '%');
+                            $dutyQuery->where('name', 'like', '%' . $this->search . '%')
+                                ->orWhere('object_type', 'like', '%' . $this->search . '%');
+                        })
+                        ->orWhereHas('duty.classification', function ($classificationQuery) {
+                            $classificationQuery->where('name', 'like', '%' . $this->search . '%');
                         })
                         ->orWhereHas('server', function ($serverQuery) {
                             $serverQuery->where('name', 'like', '%' . $this->search . '%');

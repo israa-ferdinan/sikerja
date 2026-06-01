@@ -2,10 +2,8 @@
 
 namespace App\Livewire\Admin\MasterData\Tupoksi;
 
-use App\Models\Application;
 use App\Models\DutyClassification;
 use App\Models\JobDuty;
-use App\Models\Server;
 use App\Models\Unit;
 use App\Services\ActivityLogger;
 use Livewire\Component;
@@ -28,9 +26,6 @@ class Index extends Component
 
     public ?int $duty_classification_id = null;
     public string $object_type = 'none';
-    public ?int $server_id = null;
-    public ?int $application_id = null;
-    public ?string $object_name = null;
 
     protected function rules()
     {
@@ -42,9 +37,6 @@ class Index extends Component
 
             'duty_classification_id' => ['nullable', 'exists:duty_classifications,id'],
             'object_type' => ['required', 'in:none,server,application,facility,document,user_service,other'],
-            'server_id' => ['nullable', 'required_if:object_type,server', 'exists:servers,id'],
-            'application_id' => ['nullable', 'required_if:object_type,application', 'exists:applications,id'],
-            'object_name' => ['nullable', 'required_if:object_type,facility,document,user_service,other', 'string', 'max:255'],
         ];
     }
 
@@ -59,12 +51,6 @@ class Index extends Component
             'duty_classification_id.exists' => 'Klasifikasi tupoksi tidak valid.',
             'object_type.required' => 'Jenis objek pekerjaan wajib dipilih.',
             'object_type.in' => 'Jenis objek pekerjaan tidak valid.',
-            'server_id.required_if' => 'Server wajib dipilih jika jenis objek adalah Server.',
-            'server_id.exists' => 'Server yang dipilih tidak valid.',
-            'application_id.required_if' => 'Aplikasi wajib dipilih jika jenis objek adalah Aplikasi.',
-            'application_id.exists' => 'Aplikasi yang dipilih tidak valid.',
-            'object_name.required_if' => 'Nama objek wajib diisi untuk jenis objek ini.',
-            'object_name.max' => 'Nama objek maksimal 255 karakter.',
         ];
     }
 
@@ -93,9 +79,6 @@ class Index extends Component
 
         $this->duty_classification_id = $tupoksi->duty_classification_id;
         $this->object_type = $tupoksi->object_type ?: 'none';
-        $this->server_id = $tupoksi->server_id;
-        $this->application_id = $tupoksi->application_id;
-        $this->object_name = $tupoksi->object_name;
 
         $this->isEdit = true;
         $this->showModal = true;
@@ -108,26 +91,12 @@ class Index extends Component
         $validated['unit_id'] = $validated['unit_id'] ?: null;
         $validated['is_active'] = (bool) $validated['is_active'];
 
-        if ($validated['object_type'] === 'none') {
-            $validated['server_id'] = null;
-            $validated['application_id'] = null;
-            $validated['object_name'] = null;
-        }
-
-        if ($validated['object_type'] === 'server') {
-            $validated['application_id'] = null;
-            $validated['object_name'] = null;
-        }
-
-        if ($validated['object_type'] === 'application') {
-            $validated['server_id'] = null;
-            $validated['object_name'] = null;
-        }
-
-        if (in_array($validated['object_type'], ['facility', 'document', 'user_service', 'other'], true)) {
-            $validated['server_id'] = null;
-            $validated['application_id'] = null;
-        }
+        // Konsep baru:
+        // Master Tupoksi hanya menyimpan kategori objek pekerjaan.
+        // Detail server/aplikasi/nama objek dicatat saat input laporan harian.
+        $validated['server_id'] = null;
+        $validated['application_id'] = null;
+        $validated['object_name'] = null;
 
         if ($this->isEdit && $this->tupoksiId) {
             $duty = JobDuty::findOrFail($this->tupoksiId);
@@ -199,22 +168,12 @@ class Index extends Component
             'isEdit',
             'duty_classification_id',
             'object_type',
-            'server_id',
-            'application_id',
-            'object_name',
         ]);
 
         $this->is_active = true;
         $this->object_type = 'none';
 
         $this->resetValidation();
-    }
-
-    public function updatedObjectType(): void
-    {
-        $this->server_id = null;
-        $this->application_id = null;
-        $this->object_name = null;
     }
 
     public function getObjectTypeOptionsProperty(): array
@@ -233,7 +192,7 @@ class Index extends Component
     public function render()
     {
         $tupoksis = JobDuty::query()
-            ->with(['unit', 'classification', 'server', 'application'])
+            ->with(['unit', 'classification'])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('name', 'like', '%' . $this->search . '%')
@@ -259,20 +218,10 @@ class Index extends Component
             ->orderBy('name')
             ->get();
 
-        $servers = Server::query()
-            ->orderBy('name')
-            ->get();
-
-        $applications = Application::query()
-            ->orderBy('name')
-            ->get();
-
         return view('livewire.admin.master-data.tupoksi.index', [
             'tupoksis' => $tupoksis,
             'units' => $units,
             'classifications' => $classifications,
-            'servers' => $servers,
-            'applications' => $applications,
         ])->layout('layouts.app');
     }
 }

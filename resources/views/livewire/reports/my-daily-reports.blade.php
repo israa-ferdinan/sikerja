@@ -45,7 +45,7 @@
                         type="text"
                         wire:model.live.debounce.500ms="search"
                         class="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-700 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                        placeholder="Cari laporan, tupoksi, aplikasi, server..."
+                        placeholder="Cari laporan, tupoksi, klasifikasi, server, atau aplikasi..."
                     >
                 </div>
             </div>

@@ -31,8 +31,6 @@ class MonthlyReportExport implements FromCollection, WithHeadings, ShouldAutoSiz
                 'employee.jobPosition',
                 'unit',
                 'duty.classification',
-                'duty.server',
-                'duty.application',
                 'server',
                 'application',
                 'photos',
@@ -61,7 +59,7 @@ class MonthlyReportExport implements FromCollection, WithHeadings, ShouldAutoSiz
                 'tupoksi' => $report->duty?->name ?? '-',
                 'klasifikasi_tupoksi' => $report->duty?->classification?->name ?? '-',
                 'jenis_objek_tupoksi' => $report->duty?->object_type_label ?? '-',
-                'objek_tupoksi' => $report->duty?->work_object_label ?? '-',
+                'objek_detail_laporan' => $this->detailObjectLabel($report),
                 'jenis_laporan' => $report->is_delegated ? 'Delegasi' : 'Normal',
                 'pemilik_tupoksi' => $report->dutyOwnerEmployee?->name
                     ?? $report->employee?->name
@@ -101,7 +99,7 @@ class MonthlyReportExport implements FromCollection, WithHeadings, ShouldAutoSiz
             'Tupoksi',
             'Klasifikasi Tupoksi',
             'Jenis Objek Tupoksi',
-            'Objek Tupoksi',
+            'Objek Detail Laporan',
             'Jenis Laporan',
             'Pemilik Tupoksi',
             'Dilaporkan Oleh',
@@ -181,5 +179,22 @@ class MonthlyReportExport implements FromCollection, WithHeadings, ShouldAutoSiz
                 $sheet->getRowDimension(1)->setRowHeight(24);
             },
         ];
+    }
+
+    private function detailObjectLabel(DailyReport $report): string
+    {
+        if ($report->server && $report->application) {
+            return $report->server->name . ' / ' . $report->application->name;
+        }
+
+        if ($report->server) {
+            return $report->server->name;
+        }
+
+        if ($report->application) {
+            return $report->application->name;
+        }
+
+        return 'Detail dicatat pada uraian laporan';
     }
 }

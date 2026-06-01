@@ -21,8 +21,6 @@ class ShowDailyReport extends Component
 
         $this->report = $report->load([
             'duty.classification',
-            'duty.server',
-            'duty.application',
             'server',
             'application',
             'photos',
@@ -45,8 +43,6 @@ class ShowDailyReport extends Component
         $this->report->load([
             'photos',
             'duty.classification',
-            'duty.server',
-            'duty.application',
             'server',
             'application',
             'delegation',

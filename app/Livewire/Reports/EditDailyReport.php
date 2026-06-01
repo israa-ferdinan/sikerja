@@ -9,6 +9,7 @@ use App\Models\Duty;
 use App\Models\Server;
 use App\Services\ActivityLogger;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
 use Livewire\Component;
@@ -54,7 +55,20 @@ class EditDailyReport extends Component
         $this->description = $report->description;
         $this->notes = $report->notes;
 
-        $this->duties = Duty::orderBy('name')->get();
+        $employeeDutyIds = DB::table('employee_duty')
+            ->where('employee_id', $user->employee_id)
+            ->pluck('duty_id')
+            ->toArray();
+
+        if ($report->duty_id && ! in_array($report->duty_id, $employeeDutyIds, true)) {
+            $employeeDutyIds[] = $report->duty_id;
+        }
+
+        $this->duties = Duty::query()
+            ->whereIn('id', $employeeDutyIds)
+            ->orderBy('name')
+            ->get();
+
         $this->servers = Server::orderBy('name')->get();
 
         $this->applications = $this->server_id
@@ -66,9 +80,48 @@ class EditDailyReport extends Component
     {
         $this->application_id = null;
 
-        $this->applications = $this->server_id
+        if (! $this->shouldShowServerField) {
+            $this->server_id = null;
+            $this->applications = collect();
+            return;
+        }
+
+        $this->applications = ($this->shouldShowApplicationField && $this->server_id)
             ? Application::where('server_id', $this->server_id)->orderBy('name')->get()
             : collect();
+    }
+
+    public function updatedDutyId(): void
+    {
+        $this->server_id = null;
+        $this->application_id = null;
+        $this->applications = collect();
+
+        $this->resetErrorBag([
+            'server_id',
+            'application_id',
+        ]);
+    }
+
+    public function getSelectedDutyObjectTypeProperty(): ?string
+    {
+        if (! $this->duty_id) {
+            return null;
+        }
+
+        return Duty::query()
+            ->whereKey($this->duty_id)
+            ->value('object_type');
+    }
+
+    public function getShouldShowServerFieldProperty(): bool
+    {
+        return in_array($this->selectedDutyObjectType, ['server', 'application'], true);
+    }
+
+    public function getShouldShowApplicationFieldProperty(): bool
+    {
+        return $this->selectedDutyObjectType === 'application';
     }
 
     public function updatedNewPhotos()
@@ -159,9 +212,15 @@ class EditDailyReport extends Component
 
         $this->validate([
             'report_date' => ['required', 'date'],
-            'duty_id' => ['nullable', 'exists:duties,id'],
-            'server_id' => ['nullable', 'exists:servers,id'],
-            'application_id' => ['nullable', 'exists:applications,id'],
+            'duty_id' => ['required', 'exists:duties,id'],
+            'server_id' => [
+                $this->shouldShowServerField ? 'required' : 'nullable',
+                'exists:servers,id',
+            ],
+            'application_id' => [
+                $this->shouldShowApplicationField ? 'required' : 'nullable',
+                'exists:applications,id',
+            ],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
             'notes' => ['nullable', 'string'],
@@ -175,12 +234,48 @@ class EditDailyReport extends Component
             'photos.max' => 'Total foto maksimal 5.',
             'photos.*.image' => 'File harus berupa gambar.',
             'photos.*.max' => 'Ukuran foto maksimal 5 MB per file.',
+            'server_id.required' => 'Server wajib dipilih untuk tupoksi dengan objek Server atau Aplikasi.',
+            'application_id.required' => 'Aplikasi wajib dipilih untuk tupoksi dengan objek Aplikasi.',
+            'duty_id.required' => 'Tupoksi wajib dipilih.',
+            'duty_id.exists' => 'Tupoksi tidak valid.',
         ]);
+
+        $employeeDutyIds = DB::table('employee_duty')
+            ->where('employee_id', auth()->user()->employee_id)
+            ->pluck('duty_id')
+            ->toArray();
+
+        $isCurrentReportDuty = (int) $this->duty_id === (int) $this->report->duty_id;
+
+        if (! in_array((int) $this->duty_id, array_map('intval', $employeeDutyIds), true) && ! $isCurrentReportDuty) {
+            $this->addError('duty_id', 'Tupoksi tidak tersedia untuk pegawai ini.');
+            return;
+        }
 
         $user = auth()->user();
 
         if (! $user->employee_id || $this->report->employee_id !== $user->employee_id) {
             abort(403, 'Anda tidak memiliki akses untuk mengubah laporan ini.');
+        }
+
+        if (! $this->shouldShowServerField) {
+            $this->server_id = null;
+        }
+
+        if (! $this->shouldShowApplicationField) {
+            $this->application_id = null;
+        }
+
+        if ($this->application_id && $this->server_id) {
+            $applicationBelongsToServer = Application::query()
+                ->where('id', $this->application_id)
+                ->where('server_id', $this->server_id)
+                ->exists();
+
+            if (! $applicationBelongsToServer) {
+                $this->addError('application_id', 'Aplikasi tidak sesuai dengan server yang dipilih.');
+                return;
+            }
         }
 
         $oldValues = $this->report->fresh()->toArray();
@@ -194,8 +289,8 @@ class EditDailyReport extends Component
 
         $this->report->update([
             'duty_id' => $this->duty_id ?: null,
-            'server_id' => $this->server_id ?: null,
-            'application_id' => $this->application_id ?: null,
+            'server_id' => $this->shouldShowServerField ? ($this->server_id ?: null) : null,
+            'application_id' => $this->shouldShowApplicationField ? ($this->application_id ?: null) : null,
             'report_date' => $this->report_date,
             'title' => $this->title,
             'description' => $this->description,

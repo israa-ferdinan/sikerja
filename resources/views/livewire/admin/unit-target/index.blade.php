@@ -202,18 +202,25 @@
                             <option value="none">Umum</option>
                             <option value="server">Server</option>
                             <option value="application">Aplikasi</option>
-                            <option value="manual">Manual</option>
+                            <option value="facility">Perangkat / Fasilitas</option>
+                            <option value="document">Dokumen / Administrasi</option>
+                            <option value="user_service">Layanan Pengguna</option>
+                            <option value="other">Lainnya</option>
                         </select>
 
                         @error('object_type')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
+
+                        <p class="mt-1 text-xs text-gray-500">
+                            Pilih kategori objek target. Jika memilih Server atau Aplikasi, target akan dihitung dari laporan harian yang memilih server/aplikasi tersebut. Untuk kategori lain, detail pekerjaan cukup dicatat di uraian laporan.
+                        </p>
                     </div>
 
                     @if ($object_type === 'server')
                         <div>
                             <label class="mb-1 block text-sm font-medium text-gray-700">
-                                Server
+                                Server <span class="text-red-500">*</span>
                             </label>
 
                             <select
@@ -240,7 +247,7 @@
                     @if ($object_type === 'application')
                         <div>
                             <label class="mb-1 block text-sm font-medium text-gray-700">
-                                Aplikasi
+                                Aplikasi <span class="text-red-500">*</span>
                             </label>
 
                             <select
@@ -264,24 +271,6 @@
                         </div>
                     @endif
 
-                    @if ($object_type === 'manual')
-                        <div>
-                            <label class="mb-1 block text-sm font-medium text-gray-700">
-                                Nama Objek Manual
-                            </label>
-
-                            <input
-                                type="text"
-                                wire:model.defer="object_name"
-                                class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                placeholder="Contoh: Dokumentasi Bulanan, Backup Database"
-                            >
-
-                            @error('object_name')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    @endif
                 </div>
 
                 <div class="grid gap-4 md:grid-cols-2">

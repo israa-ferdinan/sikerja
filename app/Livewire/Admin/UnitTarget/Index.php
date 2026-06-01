@@ -122,7 +122,7 @@ class Index extends Component
             ],
             'object_type' => [
                 'required',
-                'in:none,server,application,manual',
+                'in:none,server,application,facility,document,user_service,other',
             ],
             'server_id' => [
                 'nullable',
@@ -138,7 +138,6 @@ class Index extends Component
                 'nullable',
                 'string',
                 'max:255',
-                'required_if:object_type,manual',
             ],
             'target_quantity' => [
                 'required',
@@ -187,7 +186,6 @@ class Index extends Component
             'application_id.required_if' => 'Aplikasi wajib dipilih jika jenis objek adalah aplikasi.',
             'application_id.exists' => 'Aplikasi tidak valid.',
 
-            'object_name.required_if' => 'Nama objek manual wajib diisi.',
             'object_name.max' => 'Nama objek manual maksimal 255 karakter.',
 
             'target_quantity.required' => 'Jumlah target wajib diisi.',
@@ -250,26 +248,9 @@ class Index extends Component
 
     public function updatedObjectType(): void
     {
-        if ($this->object_type === 'none') {
-            $this->server_id = null;
-            $this->application_id = null;
-            $this->object_name = null;
-        }
-
-        if ($this->object_type === 'server') {
-            $this->application_id = null;
-            $this->object_name = null;
-        }
-
-        if ($this->object_type === 'application') {
-            $this->server_id = null;
-            $this->object_name = null;
-        }
-
-        if ($this->object_type === 'manual') {
-            $this->server_id = null;
-            $this->application_id = null;
-        }
+        $this->server_id = null;
+        $this->application_id = null;
+        $this->object_name = null;
     }
 
     protected function supportRules(): array
@@ -431,26 +412,18 @@ class Index extends Component
             $validated['quarter'] = null;
         }
 
-        if ($validated['object_type'] === 'none') {
+        if ($validated['object_type'] !== 'server') {
             $validated['server_id'] = null;
-            $validated['application_id'] = null;
-            $validated['object_name'] = null;
         }
 
-        if ($validated['object_type'] === 'server') {
-            $validated['application_id'] = null;
-            $validated['object_name'] = null;
-        }
-
-        if ($validated['object_type'] === 'application') {
-            $validated['server_id'] = null;
-            $validated['object_name'] = null;
-        }
-
-        if ($validated['object_type'] === 'manual') {
-            $validated['server_id'] = null;
+        if ($validated['object_type'] !== 'application') {
             $validated['application_id'] = null;
         }
+
+        // Konsep baru:
+        // Target Unit tidak lagi memakai object_name sebagai filter teknis.
+        // Detail manual/perangkat/dokumen dicatat di uraian laporan harian.
+        $validated['object_name'] = null;
 
         $this->ensureTargetIsUnique($validated);
 
@@ -785,13 +758,7 @@ class Index extends Component
                     $query->whereNull('application_id');
                 }
             })
-            ->where(function ($query) use ($validated) {
-                if ($validated['object_type'] === 'manual') {
-                    $query->where('object_name', $validated['object_name']);
-                } else {
-                    $query->whereNull('object_name');
-                }
-            })
+            ->whereNull('object_name')
             ->when($this->isEdit && $this->targetId, function ($query) {
                 $query->whereKeyNot($this->targetId);
             })
@@ -950,7 +917,7 @@ class Index extends Component
                 $query->where(function ($subQuery) {
                     $subQuery->where('target_name', 'like', '%' . $this->search . '%')
                         ->orWhere('target_description', 'like', '%' . $this->search . '%')
-                        ->orWhere('object_name', 'like', '%' . $this->search . '%');
+                        ->orWhere('object_type', 'like', '%' . $this->search . '%');
                 });
             })
             ->when($this->filterYear, function ($query) {
@@ -1029,6 +996,8 @@ class Index extends Component
                     ->with([
                         'employee',
                         'duty',
+                        'server',
+                        'application',
                     ])
                     ->latest('report_date')
                     ->limit($this->detailReportsLimit)

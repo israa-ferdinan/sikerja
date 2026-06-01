@@ -6,7 +6,7 @@ use App\Models\DailyReport;
 use App\Models\UnitTarget;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Str;
+
 
 class UnitTargetAchievementService
 {
@@ -54,6 +54,8 @@ class UnitTargetAchievementService
                 'duty',
                 'unit',
                 'employee',
+                'server',
+                'application',
             ])
             ->where('unit_id', $target->unit_id)
             ->whereBetween('report_date', [
@@ -68,23 +70,15 @@ class UnitTargetAchievementService
             ->when($target->object_type && $target->object_type !== 'none', function ($query) use ($target) {
                 $query->whereHas('duty', function ($dutyQuery) use ($target) {
                     $dutyQuery->where('object_type', $target->object_type);
-
-                    if ($target->object_type === 'server') {
-                        $dutyQuery->where('server_id', $target->server_id);
-                    }
-
-                    if ($target->object_type === 'application') {
-                        $dutyQuery->where('application_id', $target->application_id);
-                    }
-
-                    if ($target->object_type === 'manual') {
-                        $objectName = Str::lower(trim((string) $target->object_name));
-
-                        $dutyQuery->whereRaw('LOWER(TRIM(object_name)) = ?', [
-                            $objectName,
-                        ]);
-                    }
                 });
+
+                if ($target->object_type === 'server' && $target->server_id) {
+                    $query->where('server_id', $target->server_id);
+                }
+
+                if ($target->object_type === 'application' && $target->application_id) {
+                    $query->where('application_id', $target->application_id);
+                }
             });
     }
 

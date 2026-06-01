@@ -162,7 +162,7 @@ class Dashboard extends Component
             ->toArray();
     }
 
-    private function targetDisplayTitle(UnitTarget $target): string
+    private function targetDisplayTitle($target): string
     {
         if (! empty($target->target_name)) {
             return $target->target_name;
@@ -176,20 +176,16 @@ class Dashboard extends Component
             return $target->title;
         }
 
-        if (! empty($target->object_name)) {
-            return $target->object_name;
+        if ($target->classification?->name) {
+            return $target->classification->name;
         }
 
         if ($target->application?->name) {
-            return $target->application->name;
+            return 'Target Aplikasi: ' . $target->application->name;
         }
 
         if ($target->server?->name) {
-            return $target->server->name;
-        }
-
-        if ($target->classification?->name) {
-            return $target->classification->name;
+            return 'Target Server: ' . $target->server->name;
         }
 
         return 'Target Unit #' . $target->id;

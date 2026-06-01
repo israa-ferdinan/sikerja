@@ -305,23 +305,38 @@
                         @endif
                     </div>
 
-                    <div>
-                        <div class="text-xs font-bold uppercase tracking-wide text-slate-400">
-                            Server
+                    @if ($report->server)
+                        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">
+                                Server
+                            </p>
+                            <p class="mt-2 text-sm font-bold text-slate-900">
+                                {{ $report->server?->name }}
+                            </p>
                         </div>
-                        <div class="mt-1 text-sm text-slate-700">
-                            {{ $report->server->name ?? '-' }}
-                        </div>
-                    </div>
+                    @endif
 
-                    <div>
-                        <div class="text-xs font-bold uppercase tracking-wide text-slate-400">
-                            Aplikasi
+                    @if ($report->application)
+                        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">
+                                Aplikasi
+                            </p>
+                            <p class="mt-2 text-sm font-bold text-slate-900">
+                                {{ $report->application?->name }}
+                            </p>
                         </div>
-                        <div class="mt-1 text-sm text-slate-700">
-                            {{ $report->application->name ?? '-' }}
+                    @endif
+
+                    @if (! $report->server && ! $report->application)
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:col-span-2">
+                            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">
+                                Objek Detail
+                            </p>
+                            <p class="mt-2 text-sm font-bold text-slate-900">
+                                Tidak menggunakan server atau aplikasi khusus.
+                            </p>
                         </div>
-                    </div>
+                    @endif
                 </div>
             </x-ui.card>
 

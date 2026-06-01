@@ -476,14 +476,11 @@
                                                     <span class="font-semibold text-slate-700">
                                                         Jenis Objek:
                                                     </span>
-                                                    {{ $report->duty->object_type_label ?? '-' }}
+                                                    {{ $report->duty?->object_type_label ?? '-' }}
                                                 </div>
 
-                                                <div>
-                                                    <span class="font-semibold text-slate-700">
-                                                        Objek:
-                                                    </span>
-                                                    {{ $report->duty->work_object_label ?? '-' }}
+                                                <div class="text-slate-500">
+                                                    Detail objek pekerjaan dicatat pada laporan harian.
                                                 </div>
                                             </div>
                                         </div>
@@ -491,12 +488,25 @@
                                     </td>
 
                                     <td class="px-5 py-4 align-top">
-                                        <div class="text-sm font-semibold text-slate-800">
-                                            {{ $report->server->name ?? '-' }}
-                                        </div>
-                                        <div class="mt-1 text-xs text-slate-500">
-                                            {{ $report->application->name ?? '-' }}
-                                        </div>
+                                        @if ($report->server || $report->application)
+                                            <div class="space-y-1">
+                                                @if ($report->server)
+                                                    <div class="text-sm font-semibold text-slate-800">
+                                                        {{ $report->server?->name }}
+                                                    </div>
+                                                @endif
+
+                                                @if ($report->application)
+                                                    <div class="text-xs font-medium text-violet-700">
+                                                        {{ $report->application?->name }}
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <span class="text-xs text-slate-400">
+                                                Tidak menggunakan server/aplikasi
+                                            </span>
+                                        @endif
                                     </td>
 
                                     <td class="px-5 py-4 text-center align-top">

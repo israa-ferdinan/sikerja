@@ -27,7 +27,7 @@
                         Informasi Laporan
                     </h2>
                     <p class="mt-1 text-sm text-slate-500">
-                        Perbarui tanggal, tupoksi, server, dan aplikasi yang berkaitan dengan laporan.
+                        Perbarui tanggal dan tupoksi pekerjaan. Field server atau aplikasi hanya muncul jika sesuai dengan objek pekerjaan tupoksi.
                     </p>
                 </div>
 
@@ -54,7 +54,7 @@
                         </label>
 
                         <select
-                            wire:model="duty_id"
+                            wire:model.live="duty_id"
                             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                         >
                             <option value="">-- Pilih Tupoksi --</option>
@@ -71,54 +71,71 @@
                         @enderror
                     </div>
 
-                    <div>
-                        <label class="mb-1.5 block text-sm font-semibold text-slate-700">
-                            Server
-                        </label>
+                    @if ($this->shouldShowServerField)
+                        <div>
+                            <label class="mb-1.5 block text-sm font-semibold text-slate-700">
+                                Server <span class="text-red-500">*</span>
+                            </label>
 
-                        <select
-                            wire:model.live="server_id"
-                            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                        >
-                            <option value="">-- Pilih Server --</option>
+                            <select
+                                wire:model.live="server_id"
+                                class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                            >
+                                <option value="">-- Pilih Server --</option>
 
-                            @foreach ($servers as $server)
-                                <option value="{{ $server->id }}">
-                                    {{ $server->name }}
+                                @foreach ($servers as $server)
+                                    <option value="{{ $server->id }}">
+                                        {{ $server->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+
+                            @error('server_id')
+                                <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+
+                            @if ($this->shouldShowApplicationField)
+                                <p class="mt-1.5 text-xs text-slate-500">
+                                    Server digunakan sebagai filter untuk menampilkan daftar aplikasi.
+                                </p>
+                            @endif
+                        </div>
+                    @endif
+
+                    @if ($this->shouldShowApplicationField)
+                        <div>
+                            <label class="mb-1.5 block text-sm font-semibold text-slate-700">
+                                Aplikasi <span class="text-red-500">*</span>
+                            </label>
+
+                            <select
+                                wire:model="application_id"
+                                class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-slate-100 disabled:text-slate-500"
+                                @if (!$server_id) disabled @endif
+                            >
+                                <option value="">
+                                    {{ $server_id ? '-- Pilih Aplikasi --' : 'Pilih server terlebih dahulu' }}
                                 </option>
-                            @endforeach
-                        </select>
 
-                        @error('server_id')
-                            <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                                @foreach ($applications as $application)
+                                    <option value="{{ $application->id }}">
+                                        {{ $application->name }}
+                                    </option>
+                                @endforeach
+                            </select>
 
-                    <div>
-                        <label class="mb-1.5 block text-sm font-semibold text-slate-700">
-                            Aplikasi
-                        </label>
+                            @error('application_id')
+                                <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                        <select
-                            wire:model="application_id"
-                            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-slate-100 disabled:text-slate-500"
-                            @if (!$server_id) disabled @endif
-                        >
-                            <option value="">
-                                {{ $server_id ? '-- Pilih Aplikasi --' : 'Pilih server terlebih dahulu' }}
-                            </option>
+                        @if ($duty_id && ! $this->shouldShowServerField && ! $this->shouldShowApplicationField)
+                            <div class="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                                Tupoksi ini tidak memerlukan pilihan server atau aplikasi. Detail objek pekerjaan cukup ditulis pada uraian laporan harian.
+                            </div>
+                        @endif
 
-                            @foreach ($applications as $application)
-                                <option value="{{ $application->id }}">
-                                    {{ $application->name }}
-                                </option>
-                            @endforeach
-                        </select>
-
-                        @error('application_id')
-                            <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    @endif
                 </div>
             </x-ui.card>
 

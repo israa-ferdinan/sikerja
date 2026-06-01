@@ -87,9 +87,9 @@
                             </div>
 
                             <div>
-                                <div class="text-xs text-blue-500">Objek</div>
+                                <div class="text-xs text-blue-500">Detail Objek</div>
                                 <div class="font-medium text-blue-900">
-                                    {{ $report->duty?->work_object_label ?? '-' }}
+                                    Dicatat pada laporan harian
                                 </div>
                             </div>
                         </div>
@@ -140,19 +140,32 @@
                         </div>
                     @endif
 
-                    <div class="rounded-lg bg-gray-50 p-4">
-                        <div class="text-xs text-gray-500">Server</div>
-                        <div class="text-sm font-medium text-gray-800 mt-1">
-                            {{ $report->server->name ?? '-' }}
+                    @if ($report->server)
+                        <div class="rounded-lg bg-gray-50 p-4">
+                            <div class="text-xs text-gray-500">Server</div>
+                            <div class="text-sm font-medium text-gray-800 mt-1">
+                                {{ $report->server?->name }}
+                            </div>
                         </div>
-                    </div>
+                    @endif
 
-                    <div class="rounded-lg bg-gray-50 p-4">
-                        <div class="text-xs text-gray-500">Aplikasi</div>
-                        <div class="text-sm font-medium text-gray-800 mt-1">
-                            {{ $report->application->name ?? '-' }}
+                    @if ($report->application)
+                        <div class="rounded-lg bg-gray-50 p-4">
+                            <div class="text-xs text-gray-500">Aplikasi</div>
+                            <div class="text-sm font-medium text-gray-800 mt-1">
+                                {{ $report->application?->name }}
+                            </div>
                         </div>
-                    </div>
+                    @endif
+
+                    @if (! $report->server && ! $report->application)
+                        <div class="rounded-lg bg-gray-50 p-4 md:col-span-2">
+                            <div class="text-xs text-gray-500">Objek Detail</div>
+                            <div class="text-sm font-medium text-gray-800 mt-1">
+                                Tidak menggunakan server atau aplikasi khusus.
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <div>

@@ -99,6 +99,59 @@ class CreateDailyReport extends Component
     public function updatedFormServerId($value): void
     {
         $this->form['application_id'] = '';
+
+        if (! $this->shouldShowServerField) {
+            $this->form['server_id'] = '';
+        }
+    }
+
+    public function updatedSelectedDuty(): void
+    {
+        $this->form['server_id'] = '';
+        $this->form['application_id'] = '';
+
+        $this->resetErrorBag([
+            'form.server_id',
+            'form.application_id',
+        ]);
+    }
+
+    public function getSelectedDutyObjectTypeProperty(): ?string
+    {
+        return $this->getSelectedDutyModel()?->object_type;
+    }
+
+    public function getShouldShowServerFieldProperty(): bool
+    {
+        return in_array($this->selectedDutyObjectType, ['server', 'application'], true);
+    }
+
+    public function getShouldShowApplicationFieldProperty(): bool
+    {
+        return $this->selectedDutyObjectType === 'application';
+    }
+
+    private function getSelectedDutyModel(): ?JobDuty
+    {
+        $selected = $this->parseSelectedDuty();
+
+        if (! $selected['type'] || ! $selected['id']) {
+            return null;
+        }
+
+        if ($selected['type'] === 'personal') {
+            return JobDuty::query()->find($selected['id']);
+        }
+
+        if ($selected['type'] === 'delegation') {
+            $delegation = DutyDelegation::query()
+                ->with('duty')
+                ->find($selected['id']);
+
+            return $delegation?->duty;
+        }
+
+        return null;
     }
 
     /* public function updatedFormDutyId($value): void
@@ -215,8 +268,21 @@ class CreateDailyReport extends Component
         }
 
         $this->selected_duty = $lastReport->duty_id ? 'personal:' . $lastReport->duty_id : null;
-        $this->form['server_id'] = $lastReport->server_id ? (string) $lastReport->server_id : '';
-        $this->form['application_id'] = $lastReport->application_id ? (string) $lastReport->application_id : '';
+
+        $objectType = $this->getSelectedDutyObjectTypeProperty();
+
+        if (in_array($objectType, ['server', 'application'], true)) {
+            $this->form['server_id'] = $lastReport->server_id ? (string) $lastReport->server_id : '';
+        } else {
+            $this->form['server_id'] = '';
+        }
+
+        if ($objectType === 'application') {
+            $this->form['application_id'] = $lastReport->application_id ? (string) $lastReport->application_id : '';
+        } else {
+            $this->form['application_id'] = '';
+        }
+
         $this->form['title'] = $lastReport->title ?? '';
         $this->form['description'] = $lastReport->description ?? '';
         $this->form['notes'] = $lastReport->notes ?? '';
@@ -239,8 +305,14 @@ class CreateDailyReport extends Component
        $validated = $this->validate([
             'form.report_date' => ['required', 'date'],
             'selected_duty' => ['required', 'string'],
-            'form.server_id' => ['nullable', 'exists:servers,id'],
-            'form.application_id' => ['nullable', 'exists:applications,id'],
+            'form.server_id' => [
+                $this->shouldShowServerField ? 'required' : 'nullable',
+                'exists:servers,id',
+            ],
+            'form.application_id' => [
+                $this->shouldShowApplicationField ? 'required' : 'nullable',
+                'exists:applications,id',
+            ],
             'form.title' => ['required', 'string', 'max:255'],
             'form.description' => ['required', 'string'],
             'form.notes' => ['nullable', 'string'],
@@ -251,6 +323,8 @@ class CreateDailyReport extends Component
             'form.report_date.required' => 'Tanggal laporan wajib diisi.',
             'form.report_date.date' => 'Format tanggal laporan tidak valid.',
             'selected_duty.required' => 'Tupoksi wajib dipilih.',
+            'form.server_id.required' => 'Server wajib dipilih untuk tupoksi dengan objek Server atau Aplikasi.',
+            'form.application_id.required' => 'Aplikasi wajib dipilih untuk tupoksi dengan objek Aplikasi.',
             'form.server_id.exists' => 'Server tidak valid.',
             'form.application_id.exists' => 'Aplikasi tidak valid.',
             'form.title.required' => 'Judul kegiatan wajib diisi.',
@@ -270,6 +344,14 @@ class CreateDailyReport extends Component
 
         $employee = $user->employee;
         $form = $validated['form'];
+
+        if (! $this->shouldShowServerField) {
+            $form['server_id'] = '';
+        }
+
+        if (! $this->shouldShowApplicationField) {
+            $form['application_id'] = '';
+        }
 
         if (! empty($form['application_id']) && ! empty($form['server_id'])) {
             $applicationBelongsToServer = Application::query()
@@ -417,7 +499,7 @@ class CreateDailyReport extends Component
     {
         $applications = collect();
 
-        if (! empty($this->form['server_id'])) {
+        if ($this->shouldShowApplicationField && ! empty($this->form['server_id'])) {
             $applications = Application::query()
                 ->where('server_id', $this->form['server_id'])
                 ->orderBy('name')
@@ -450,7 +532,7 @@ class CreateDailyReport extends Component
             ->toArray();
 
         $this->personalDuties = JobDuty::query()
-            ->with(['classification', 'server', 'application'])
+            ->with(['classification'])
             ->whereIn('id', $personalDutyIds)
             ->orderBy('name')
             ->get()
@@ -459,15 +541,13 @@ class CreateDailyReport extends Component
                 'name' => $duty->name,
                 'classification_name' => $duty->classification?->name,
                 'object_type_label' => $duty->object_type_label,
-                'work_object_label' => $duty->work_object_label,
+                'work_object_label' => 'Detail objek dicatat saat input laporan',
             ])
             ->toArray();
 
         $this->delegatedDuties = DutyDelegation::query()
             ->with([
                 'duty.classification',
-                'duty.server',
-                'duty.application',
                 'ownerEmployee:id,name',
             ])
             ->where('delegate_employee_id', $employee->id)
@@ -489,7 +569,7 @@ class CreateDailyReport extends Component
                 'end_date' => optional($delegation->end_date)->format('Y-m-d'),
                 'classification_name' => $delegation->duty?->classification?->name,
                 'object_type_label' => $delegation->duty?->object_type_label ?? '-',
-                'work_object_label' => $delegation->duty?->work_object_label ?? '-',
+                'work_object_label' => 'Detail objek dicatat saat input laporan',
             ])
             ->toArray();
     }
@@ -530,7 +610,7 @@ class CreateDailyReport extends Component
 
         if ($selected['type'] === 'personal') {
             $duty = JobDuty::query()
-                ->with(['classification', 'server', 'application'])
+                ->with(['classification'])
                 ->find($selected['id']);
 
             if (! $duty) {
@@ -542,8 +622,9 @@ class CreateDailyReport extends Component
                 'source' => 'Tupoksi Pribadi',
                 'owner_name' => null,
                 'classification_name' => $duty->classification?->name ?? 'Tanpa klasifikasi',
+                'object_type' => $duty->object_type,
                 'object_type_label' => $duty->object_type_label,
-                'work_object_label' => $duty->work_object_label,
+                'work_object_label' => 'Detail objek dicatat saat input laporan',
             ];
         }
 
@@ -551,8 +632,6 @@ class CreateDailyReport extends Component
             $delegation = DutyDelegation::query()
                 ->with([
                     'duty.classification',
-                    'duty.server',
-                    'duty.application',
                     'ownerEmployee:id,name',
                 ])
                 ->find($selected['id']);
@@ -566,8 +645,9 @@ class CreateDailyReport extends Component
                 'source' => 'Tupoksi Delegasi',
                 'owner_name' => $delegation->ownerEmployee?->name,
                 'classification_name' => $delegation->duty->classification?->name ?? 'Tanpa klasifikasi',
+                'object_type' => $delegation->duty->object_type,
                 'object_type_label' => $delegation->duty->object_type_label,
-                'work_object_label' => $delegation->duty->work_object_label,
+                'work_object_label' => 'Detail objek dicatat saat input laporan',
             ];
         }
 
