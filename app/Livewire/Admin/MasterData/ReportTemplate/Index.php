@@ -99,7 +99,7 @@ class Index extends Component
                 newValues: $template->fresh(['unit', 'jobDuty'])->toArray()
             );
 
-            session()->flash('success', 'Template laporan berhasil diperbarui.');
+            $this->dispatch('toast', type: 'success', message: 'Template laporan berhasil diperbarui.');
         } else {
             $template = ReportTemplate::create($data);
 
@@ -111,7 +111,7 @@ class Index extends Component
                 newValues: $template->fresh(['unit', 'jobDuty'])->toArray()
             );
 
-            session()->flash('success', 'Template laporan berhasil ditambahkan.');
+            $this->dispatch('toast', type: 'success', message: 'Template laporan berhasil ditambahkan.');
         }
 
         $this->closeModal();
@@ -133,7 +133,7 @@ class Index extends Component
 
         $template->delete();
 
-        session()->flash('success', 'Template laporan berhasil dihapus.');
+        $this->dispatch('toast', type: 'success', message: 'Template laporan berhasil dihapus.');
     }
 
     public function closeModal()

@@ -8,6 +8,7 @@ use App\Models\UnitTarget;
 use App\Models\Application;
 use App\Models\Server;
 use App\Models\UnitTargetSupport;
+use App\Models\UnitTargetProgressUpdate;
 
 use App\Services\ActivityLogger;
 use App\Services\UnitTargetAchievementService;
@@ -52,6 +53,7 @@ class Index extends Component
 
     public int $target_quantity = 1;
     public string $target_unit = 'kali';
+    public string $achievement_method = 'auto_report';
 
     public bool $is_active = true;
 
@@ -62,6 +64,11 @@ class Index extends Component
     public int $detailReportsLimit = 10;
 
     public bool $showSupportForm = false;
+
+    public bool $showProgressForm = false;
+    public int $manual_progress_input = 0;
+    public string $manual_status_input = 'not_started';
+    public ?string $manual_progress_note_input = null;
 
     public string $support_type = 'note';
     public string $support_title = '';
@@ -112,13 +119,12 @@ class Index extends Component
             ],
             'period_type' => [
                 'required',
-                'in:annual,quarterly',
+                'in:annual',
             ],
             'quarter' => [
                 'nullable',
                 'integer',
                 'in:1,2,3,4',
-                'required_if:period_type,quarterly',
             ],
             'object_type' => [
                 'required',
@@ -149,6 +155,10 @@ class Index extends Component
                 'string',
                 'max:50',
             ],
+            'achievement_method' => [
+                'required',
+                'in:auto_report,manual_progress,manual_status',
+            ],
             'is_active' => [
                 'boolean',
             ],
@@ -172,9 +182,8 @@ class Index extends Component
             'target_year.max' => 'Tahun target tidak valid.',
 
             'period_type.required' => 'Periode target wajib dipilih.',
-            'period_type.in' => 'Periode target tidak valid.',
-
-            'quarter.required_if' => 'Triwulan wajib dipilih jika periode target adalah triwulan.',
+            'period_type.in' => 'Periode target hanya mendukung target tahunan.',
+            
             'quarter.in' => 'Triwulan tidak valid.',
 
             'object_type.required' => 'Jenis objek wajib dipilih.',
@@ -194,6 +203,9 @@ class Index extends Component
 
             'target_unit.required' => 'Satuan target wajib diisi.',
             'target_unit.max' => 'Satuan target maksimal 50 karakter.',
+
+            'achievement_method.required' => 'Metode capaian wajib dipilih.',
+            'achievement_method.in' => 'Metode capaian tidak valid.',
         ];
     }
 
@@ -243,6 +255,23 @@ class Index extends Component
     {
         if ($this->period_type === 'annual') {
             $this->quarter = null;
+        }
+    }
+
+    public function updatedAchievementMethod(): void
+    {
+        if (in_array($this->achievement_method, ['manual_progress', 'manual_status'], true)) {
+            $this->target_quantity = 100;
+            $this->target_unit = '%';
+            return;
+        }
+
+        if ($this->target_unit === '%') {
+            $this->target_unit = 'kali';
+        }
+
+        if ($this->target_quantity < 1) {
+            $this->target_quantity = 1;
         }
     }
 
@@ -315,6 +344,50 @@ class Index extends Component
         ];
     }
 
+    protected function progressRules(UnitTarget $target): array
+    {
+        $rules = [
+            'manual_progress_note_input' => [
+                'nullable',
+                'string',
+                'max:1000',
+            ],
+        ];
+
+        if ($target->achievement_method === 'manual_progress') {
+            $rules['manual_progress_input'] = [
+                'required',
+                'integer',
+                'min:0',
+                'max:100',
+            ];
+        }
+
+        if ($target->achievement_method === 'manual_status') {
+            $rules['manual_status_input'] = [
+                'required',
+                'in:not_started,in_progress,completed',
+            ];
+        }
+
+        return $rules;
+    }
+
+    protected function progressMessages(): array
+    {
+        return [
+            'manual_progress_input.required' => 'Progress wajib diisi.',
+            'manual_progress_input.integer' => 'Progress harus berupa angka.',
+            'manual_progress_input.min' => 'Progress minimal 0%.',
+            'manual_progress_input.max' => 'Progress maksimal 100%.',
+
+            'manual_status_input.required' => 'Status capaian wajib dipilih.',
+            'manual_status_input.in' => 'Status capaian tidak valid.',
+
+            'manual_progress_note_input.max' => 'Catatan progress maksimal 1000 karakter.',
+        ];
+    }
+
     public function create(): void
     {
         $this->resetForm();
@@ -328,6 +401,7 @@ class Index extends Component
         $this->object_type = 'none';
         $this->target_quantity = 1;
         $this->target_unit = 'kali';
+        $this->achievement_method = 'auto_report';
 
         if ($this->isKanit()) {
             $this->unit_id = $this->kanitUnitId();
@@ -360,6 +434,11 @@ class Index extends Component
 
         $this->target_quantity = (int) $target->target_quantity;
         $this->target_unit = $target->target_unit ?: 'kali';
+        $this->achievement_method = $target->achievement_method ?: 'auto_report';
+        if (in_array($this->achievement_method, ['manual_progress', 'manual_status'], true)) {
+            $this->target_quantity = 100;
+            $this->target_unit = '%';
+        }
 
         $this->is_active = (bool) $target->is_active;
 
@@ -388,11 +467,122 @@ class Index extends Component
         $this->detailReportsLimit = 10;
 
         $this->resetSupportForm();
+        $this->resetProgressForm();
     }
 
     public function loadMoreMatchingReports(): void
     {
         $this->detailReportsLimit += 10;
+    }
+
+    public function openProgressForm(): void
+    {
+        $target = $this->findAccessibleDetailTarget();
+
+        if (! in_array($target->achievement_method, ['manual_progress', 'manual_status'], true)) {
+            session()->flash('success', 'Target otomatis tidak membutuhkan update progress manual.');
+            return;
+        }
+
+        $this->showProgressForm = true;
+        $this->manual_progress_input = (int) $target->manual_progress;
+        $this->manual_status_input = $target->manual_status ?: 'not_started';
+        $this->manual_progress_note_input = null;
+
+        $this->resetValidation([
+            'manual_progress_input',
+            'manual_status_input',
+            'manual_progress_note_input',
+        ]);
+    }
+
+    public function cancelProgressForm(): void
+    {
+        $this->resetProgressForm();
+    }
+
+    public function saveProgressUpdate(): void
+    {
+        $target = $this->findAccessibleDetailTarget();
+
+        if (! in_array($target->achievement_method, ['manual_progress', 'manual_status'], true)) {
+            session()->flash('success', 'Target otomatis tidak membutuhkan update progress manual.');
+            $this->resetProgressForm();
+            return;
+        }
+
+        $validated = $this->validate(
+            $this->progressRules($target),
+            $this->progressMessages()
+        );
+
+        $oldData = $target->toArray();
+
+        $progressValue = 0;
+        $status = $target->manual_status ?: 'not_started';
+
+        if ($target->achievement_method === 'manual_progress') {
+            $progressValue = (int) $validated['manual_progress_input'];
+
+            $status = match (true) {
+                $progressValue >= 100 => 'completed',
+                $progressValue > 0 => 'in_progress',
+                default => 'not_started',
+            };
+        }
+
+        if ($target->achievement_method === 'manual_status') {
+            $status = $validated['manual_status_input'];
+
+            $progressValue = match ($status) {
+                'completed' => 100,
+                'in_progress' => 50,
+                default => 0,
+            };
+        }
+
+        $note = filled($validated['manual_progress_note_input'] ?? null)
+            ? trim($validated['manual_progress_note_input'])
+            : null;
+
+        $target->update([
+            'manual_progress' => $progressValue,
+            'manual_status' => $status,
+            'manual_progress_note' => $note,
+            'manual_progress_updated_by' => Auth::id(),
+            'manual_progress_updated_at' => now(),
+            'updated_by' => Auth::id(),
+        ]);
+
+        $progressUpdate = UnitTargetProgressUpdate::create([
+            'unit_target_id' => $target->id,
+            'unit_id' => $target->unit_id,
+            'achievement_method' => $target->achievement_method,
+            'progress_value' => $progressValue,
+            'status' => $status,
+            'note' => $note,
+            'updated_by' => Auth::id(),
+        ]);
+
+        ActivityLogger::log(
+            'unit_target_progress',
+            'update',
+            'Memperbarui progress target unit: ' . $target->target_name,
+            $progressUpdate,
+            [
+                'target' => [
+                    'id' => $target->id,
+                    'name' => $target->target_name,
+                ],
+                'old' => $oldData,
+                'new' => $target->fresh()->toArray(),
+                'progress_update' => $progressUpdate->toArray(),
+            ]
+        );
+
+        $this->resetProgressForm();
+
+        session()->flash('success', 'Progress target berhasil diperbarui.');
     }
 
     public function save(): void
@@ -408,8 +598,15 @@ class Index extends Component
 
         $validated = $this->validate();
 
-        if ($validated['period_type'] === 'annual') {
-            $validated['quarter'] = null;
+        // R7: Target Unit final hanya tahunan.
+        // Field period_type dan quarter tetap dipertahankan di database
+        // untuk backward compatibility struktur lama.
+        $validated['period_type'] = 'annual';
+        $validated['quarter'] = null;
+
+        if (in_array($validated['achievement_method'], ['manual_progress', 'manual_status'], true)) {
+            $validated['target_quantity'] = 100;
+            $validated['target_unit'] = '%';
         }
 
         if ($validated['object_type'] !== 'server') {
@@ -723,6 +920,27 @@ class Index extends Component
         ]);
     }
 
+    private function resetProgressForm(): void
+    {
+        $this->reset([
+            'showProgressForm',
+            'manual_progress_input',
+            'manual_status_input',
+            'manual_progress_note_input',
+        ]);
+
+        $this->showProgressForm = false;
+        $this->manual_progress_input = 0;
+        $this->manual_status_input = 'not_started';
+        $this->manual_progress_note_input = null;
+
+        $this->resetValidation([
+            'manual_progress_input',
+            'manual_status_input',
+            'manual_progress_note_input',
+        ]);
+    }
+
     private function ensureTargetIsUnique(array $validated): void
     {
         $exists = UnitTarget::query()
@@ -767,11 +985,11 @@ class Index extends Component
         if ($exists) {
             $this->addError(
                 'target_name',
-                'Target dengan kombinasi unit, tahun, periode, klasifikasi, dan objek tersebut sudah ada.'
+                'Target dengan kombinasi unit, tahun, klasifikasi, dan objek tersebut sudah ada.'
             );
 
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'target_name' => 'Target dengan kombinasi unit, tahun, periode, klasifikasi, dan objek tersebut sudah ada.',
+                'target_name' => 'Target dengan kombinasi unit, tahun, klasifikasi, dan objek tersebut sudah ada.',
             ]);
         }
     }
@@ -845,6 +1063,7 @@ class Index extends Component
         'object_name',
         'target_quantity',
         'target_unit',
+        'achievement_method',
         'is_active',
         'showForm',
         'isEdit',
@@ -855,6 +1074,7 @@ class Index extends Component
         $this->object_type = 'none';
         $this->target_quantity = 1;
         $this->target_unit = 'kali';
+        $this->achievement_method = 'auto_report';
         $this->is_active = true;
 
         if ($this->isKanit()) {
@@ -923,12 +1143,7 @@ class Index extends Component
             ->when($this->filterYear, function ($query) {
                 $query->where('target_year', $this->filterYear);
             })
-            ->when($this->filterPeriodType, function ($query) {
-                $query->where('period_type', $this->filterPeriodType);
-            })
-            ->when($this->filterPeriodType === 'quarterly' && $this->filterQuarter, function ($query) {
-                $query->where('quarter', $this->filterQuarter);
-            })
+            ->where('period_type', 'annual')
             ->when($this->filterUnitId && $this->isAdmin(), function ($query) {
                 $query->where('unit_id', $this->filterUnitId);
             })
@@ -982,6 +1197,8 @@ class Index extends Component
             if ($detailTarget) {
                 $detailTarget->load([
                     'activeSupports.uploader',
+                    'progressUpdates.updater',
+                    'manualProgressUpdater',
                 ]);
 
                 $achievementService = app(UnitTargetAchievementService::class);

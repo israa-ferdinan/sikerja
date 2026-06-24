@@ -64,6 +64,8 @@ class Index extends Component
         $this->showForm = true;
         $this->isEdit = false;
         $this->is_active = true;
+
+        $this->dispatch('scroll-to-duty-classification-form');
     }
 
     public function edit(int $id): void
@@ -77,6 +79,8 @@ class Index extends Component
 
         $this->showForm = true;
         $this->isEdit = true;
+
+        $this->dispatch('scroll-to-duty-classification-form');
     }
 
     public function save(): void
@@ -101,7 +105,7 @@ class Index extends Component
                 ]
             );
 
-            session()->flash('success', 'Klasifikasi tupoksi berhasil diperbarui.');
+            $this->dispatch('toast', type: 'success', message: 'Klasifikasi tupoksi berhasil diperbarui.');
         } else {
             $classification = DutyClassification::create($validated);
 
@@ -115,7 +119,7 @@ class Index extends Component
                 ]
             );
 
-            session()->flash('success', 'Klasifikasi tupoksi berhasil ditambahkan.');
+            $this->dispatch('toast', type: 'success', message: 'Klasifikasi tupoksi berhasil ditambahkan.');
         }
 
         $this->resetForm();
@@ -142,7 +146,7 @@ class Index extends Component
             ]
         );
 
-        session()->flash('success', 'Status klasifikasi tupoksi berhasil diperbarui.');
+        $this->dispatch('toast', type: 'success', message: 'Status klasifikasi tupoksi berhasil diperbarui.');
     }
 
     public function cancel(): void

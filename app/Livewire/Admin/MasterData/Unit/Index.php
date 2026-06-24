@@ -87,7 +87,7 @@ class Index extends Component
                 newValues: $unit->fresh()->toArray()
             );
 
-            session()->flash('success', 'Unit berhasil diperbarui.');
+            $message = 'Unit berhasil diperbarui.';
         } else {
             $unit = Unit::create($data);
 
@@ -99,10 +99,12 @@ class Index extends Component
                 newValues: $unit->fresh()->toArray()
             );
 
-            session()->flash('success', 'Unit berhasil ditambahkan.');
+            $message = 'Unit berhasil ditambahkan.';
         }
 
         $this->closeModal();
+
+        $this->dispatch('toast', type: 'success', message: $message);
     }
 
     public function delete($id)
@@ -121,7 +123,7 @@ class Index extends Component
 
         $unit->delete();
 
-        session()->flash('success', 'Unit berhasil dihapus.');
+        $this->dispatch('toast', type: 'success', message: 'Unit berhasil dihapus.');
     }
 
     public function closeModal()

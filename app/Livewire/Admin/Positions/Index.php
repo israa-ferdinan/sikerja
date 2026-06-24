@@ -108,7 +108,11 @@ class Index extends Component
                 newValues: $position->fresh()->toArray()
             );
 
-            session()->flash('success', 'Jabatan berhasil diperbarui.');
+            $this->dispatch(
+                'toast',
+                type: 'success',
+                message: 'Jabatan berhasil diperbarui.'
+            );
         } else {
             $position = Position::create($data);
 
@@ -120,7 +124,11 @@ class Index extends Component
                 newValues: $position->fresh()->toArray()
             );
 
-            session()->flash('success', 'Jabatan berhasil ditambahkan.');
+            $this->dispatch(
+                'toast',
+                type: 'success',
+                message: 'Jabatan berhasil ditambahkan.'
+            );
         }
 
         $this->resetForm();
@@ -149,9 +157,10 @@ class Index extends Component
             newValues: $freshPosition->toArray()
         );
 
-        session()->flash(
-            'success',
-            $freshPosition->is_active
+        $this->dispatch(
+            'toast',
+            type: 'success',
+            message: $freshPosition->is_active
                 ? 'Jabatan berhasil diaktifkan.'
                 : 'Jabatan berhasil dinonaktifkan.'
         );
@@ -173,7 +182,11 @@ class Index extends Component
 
         $position->delete();
 
-        session()->flash('success', 'Jabatan berhasil dihapus.');
+        $this->dispatch(
+            'toast',
+            type: 'success',
+            message: 'Jabatan berhasil dihapus.'
+        );
     }
 
     public function cancel(): void

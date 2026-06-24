@@ -11,6 +11,7 @@ use App\Models\Position;
 use App\Models\User;
 use App\Models\JobDuty;
 use App\Models\DutyDelegation;
+use App\Models\MonthlyReportApproval;
 
 class Employee extends Model
 {
@@ -22,6 +23,7 @@ class Employee extends Model
         'position',
         'phone',
         'email',
+        'signature_path',
         'is_active',
     ];
 
@@ -71,5 +73,10 @@ class Employee extends Model
     public function receivedDutyDelegations()
     {
         return $this->hasMany(DutyDelegation::class, 'delegate_employee_id');
+    }
+
+    public function monthlyReportApprovals(): HasMany
+    {
+        return $this->hasMany(MonthlyReportApproval::class, 'approved_by_employee_id');
     }
 }

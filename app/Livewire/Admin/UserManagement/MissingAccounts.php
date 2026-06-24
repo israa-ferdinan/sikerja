@@ -118,10 +118,10 @@ class MissingAccounts extends Component
 
     public function openCreateUserModal(int $employeeId): void
     {
-        $employee = Employee::with(['unit', 'position'])->findOrFail($employeeId);
+        $employee = Employee::with(['unit', 'jobPosition', 'user'])->findOrFail($employeeId);
 
         if ($employee->user) {
-            session()->flash('error', 'Pegawai ini sudah memiliki akun user.');
+            $this->dispatch('toast', type: 'error', message: 'Pegawai ini sudah memiliki akun user.');
             return;
         }
 
@@ -179,7 +179,7 @@ class MissingAccounts extends Component
         $employee = Employee::with('user')->findOrFail($this->selectedEmployeeId);
 
         if ($employee->user) {
-            session()->flash('error', 'Pegawai ini sudah memiliki akun user.');
+            $this->dispatch('toast', type: 'error', message: 'Pegawai ini sudah memiliki akun user.');
             $this->closeCreateUserModal();
             return;
         }
@@ -241,10 +241,10 @@ class MissingAccounts extends Component
                 ->toArray()
         );
 
-        session()->flash('success', 'Akun user berhasil dibuat untuk pegawai: ' . $employee->name);
-
         $this->closeCreateUserModal();
         $this->resetPage();
+
+        $this->dispatch('toast', type: 'success', message: 'Akun user berhasil dibuat untuk pegawai: ' . $employee->name);
     }
 
     public function closeCreateUserModal(): void

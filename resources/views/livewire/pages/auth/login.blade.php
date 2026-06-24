@@ -147,6 +147,27 @@ new class extends Component
                         </div>
                     @endif
 
+                    {{-- Info akses foto laporan --}}
+                    @if(session()->has('url.intended') && str_contains(session('url.intended'), '/reports/photos/'))
+                        <div class="mb-5 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                            <div class="flex items-start gap-3">
+                                <div class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
+                                    <x-icon name="lock-keyhole" class="h-5 w-5" />
+                                </div>
+
+                                <div>
+                                    <p class="font-bold">
+                                        Akses foto laporan membutuhkan login
+                                    </p>
+
+                                    <p class="mt-1 leading-6 text-blue-700">
+                                        Silakan masuk terlebih dahulu. Setelah login berhasil, foto laporan yang Anda buka akan ditampilkan otomatis.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
                     <form wire:submit.prevent="login" x-on:submit="loggingIn = true" class="space-y-5">
                         {{-- Login Field --}}
                         <div>

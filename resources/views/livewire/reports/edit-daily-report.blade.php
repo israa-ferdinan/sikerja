@@ -1,20 +1,47 @@
 <div class="relative z-10 p-4 sm:p-6">
     <div class="relative z-10 mx-auto max-w-5xl space-y-6">
 
-        <x-ui.page-header
-            title="Edit Laporan Kerja Harian"
-            subtitle="Perbarui laporan kerja harian dan foto dokumentasi yang sudah tersimpan."
-        />
+        <x-page-hero
+            badge="Laporan Harian Pegawai"
+            title="Perbarui laporan kerja harian"
+            description="Edit tanggal, tupoksi, detail kegiatan, dan dokumentasi foto laporan yang sudah tersimpan."
+            icon="edit-3"
+        >
+            <x-slot:aside>
+                <div class="rounded-2xl border border-white/10 bg-white/10 p-4 shadow-sm backdrop-blur">
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/15 text-white ring-1 ring-white/15">
+                            <x-icon name="calendar-days" class="h-5 w-5" />
+                        </div>
 
-        @if (session()->has('success'))
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.22em] text-blue-100/80">
+                                Tanggal Laporan
+                            </p>
+                            <p class="mt-1 text-lg font-bold text-white">
+                                {{ $report_date ?: '-' }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                        <div class="rounded-xl bg-white/10 px-3 py-2 ring-1 ring-white/10">
+                            <p class="text-xs text-blue-100/75">Foto tersimpan</p>
+                            <p class="mt-1 font-bold text-white">{{ $report->photos->count() }}</p>
+                        </div>
+
+                        <div class="rounded-xl bg-white/10 px-3 py-2 ring-1 ring-white/10">
+                            <p class="text-xs text-blue-100/75">Foto baru</p>
+                            <p class="mt-1 font-bold text-white">{{ count($photos) }}</p>
+                        </div>
+                    </div>
+                </div>
+            </x-slot:aside>
+        </x-page-hero>
+
+        @if ($isLocked)
             <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        @if (session()->has('error'))
-            <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-                {{ session('error') }}
+                Laporan ini berada pada periode yang sudah difinalisasi oleh Kanit. Data laporan dan foto tidak dapat diubah.
             </div>
         @endif
 
@@ -233,7 +260,7 @@
                                 >
                                     <div class="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                                         <img
-                                            src="{{ asset('storage/' . $photo->file_path) }}"
+                                            src="{{ route('reports.photos.show', $photo) }}"
                                             class="block h-32 w-full object-cover"
                                             alt="Foto laporan"
                                         >
@@ -244,17 +271,31 @@
                                             </span>
                                         </div>
 
-                                        <button
-                                            type="button"
-                                            wire:click="removeExistingPhoto({{ $photo->id }})"
-                                            wire:confirm="Hapus foto ini?"
-                                            class="absolute right-2 top-2 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-white shadow-lg ring-2 ring-white transition hover:bg-red-700 sm:opacity-0 sm:group-hover:opacity-100"
-                                            title="Hapus foto"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
+                                        @if (! $isLocked)
+                                            <button
+                                                type="button"
+                                                x-data
+                                                x-on:click="$dispatch('open-confirm-modal', {
+                                                    title: 'Hapus foto tersimpan?',
+                                                    message: 'Foto ini akan dihapus dari laporan. Tindakan ini tidak bisa dibatalkan.',
+                                                    confirmText: 'Ya, Hapus',
+                                                    cancelText: 'Batal',
+                                                    variant: 'danger',
+                                                    onConfirm: () => $wire.removeExistingPhoto({{ $photo->id }})
+                                                })"
+                                                class="absolute right-2 top-2 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-white shadow-lg ring-2 ring-white transition hover:bg-red-700 sm:opacity-0 sm:group-hover:opacity-100"
+                                                title="Hapus foto"
+                                            >
+                                                <x-icon name="x" class="h-4 w-4" />
+                                            </button>
+                                        @else
+                                            <div
+                                                class="absolute right-2 top-2 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-slate-800/80 text-white shadow-lg ring-2 ring-white"
+                                                title="Foto terkunci"
+                                            >
+                                                <x-icon name="lock" class="h-4 w-4" />
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
                             @endforeach
@@ -280,10 +321,7 @@
                     <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5">
                         <label class="flex cursor-pointer flex-col items-center justify-center text-center">
                             <div class="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-500 shadow-sm ring-1 ring-slate-200">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0 4 4m-4-4-4 4" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 16.5V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2.5" />
-                                </svg>
+                                <x-icon name="upload-cloud" class="h-6 w-6" />
                             </div>
 
                             <span class="text-sm font-semibold text-slate-700">
@@ -348,14 +386,19 @@
 
                                             <button
                                                 type="button"
-                                                wire:click="removeNewPhoto({{ $index }})"
-                                                wire:confirm="Hapus foto ini?"
-                                                class="absolute right-2 top-2 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-white shadow-lg ring-2 ring-white transition hover:bg-red-700 sm:opacity-0 sm:group-hover:opacity-100"
+                                                x-data
+                                                x-on:click="$dispatch('open-confirm-modal', {
+                                                    title: 'Hapus foto baru?',
+                                                    message: 'Foto ini akan dihapus dari daftar upload sementara. File belum tersimpan ke laporan.',
+                                                    confirmText: 'Ya, Hapus',
+                                                    cancelText: 'Batal',
+                                                    variant: 'danger',
+                                                    onConfirm: () => $wire.removeNewPhoto({{ $index }})
+                                                })"
+                                                class="absolute right-2 top-2 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-white shadow-lg transition hover:bg-red-700"
                                                 title="Hapus foto"
                                             >
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                                                </svg>
+                                                <x-icon name="x" class="h-4 w-4" />
                                             </button>
                                         </div>
                                     </div>
@@ -378,16 +421,18 @@
 
                     <button
                         type="submit"
+                        @disabled($isLocked)
                         wire:loading.attr="disabled"
-                        wire:target="update,newPhotos"
-                        class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-70"
+                        wire:target="update"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                     >
+                        <x-icon wire:loading.remove wire:target="update" name="save" class="h-4 w-4" />
+
                         <span wire:loading.remove wire:target="update">
                             Simpan Perubahan
                         </span>
 
-                        <span wire:loading.flex wire:target="update" class="items-center gap-2">
-                            <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                        <span wire:loading wire:target="update">
                             Menyimpan...
                         </span>
                     </button>

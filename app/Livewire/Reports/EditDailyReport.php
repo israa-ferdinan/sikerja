@@ -7,11 +7,16 @@ use App\Models\DailyReport;
 use App\Models\DailyReportPhoto;
 use App\Models\Duty;
 use App\Models\Server;
+
 use App\Services\ActivityLogger;
+use App\Services\MonthlyReportApprovalService;
+
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
+
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -36,6 +41,8 @@ class EditDailyReport extends Component
     public $photos = [];
     public $newPhotos = [];
     public $photoInputKey = 0;
+
+    public bool $isLocked = false;
 
     public function mount(DailyReport $report)
     {
@@ -74,6 +81,11 @@ class EditDailyReport extends Component
         $this->applications = $this->server_id
             ? Application::where('server_id', $this->server_id)->orderBy('name')->get()
             : collect();
+
+        $this->isLocked = $this->isCurrentReportLocked();
+
+        $this->report->refresh();
+        $this->report->load('photos');
     }
 
     public function updatedServerId()
@@ -124,8 +136,50 @@ class EditDailyReport extends Component
         return $this->selectedDutyObjectType === 'application';
     }
 
+    private function isCurrentReportLocked(): bool
+    {
+        if (! $this->report?->unit_id || ! $this->report?->report_date) {
+            return false;
+        }
+
+        return app(MonthlyReportApprovalService::class)->isReportDateLocked(
+            unitId: (int) $this->report->unit_id,
+            reportDate: $this->report->report_date
+        );
+    }
+
+    private function isTargetReportDateLocked(): bool
+    {
+        if (! $this->report?->unit_id || empty($this->report_date)) {
+            return false;
+        }
+
+        return app(MonthlyReportApprovalService::class)->isReportDateLocked(
+            unitId: (int) $this->report->unit_id,
+            reportDate: $this->report_date
+        );
+    }
+
+    private function blockIfCurrentReportLocked(): bool
+    {
+        if (! $this->isCurrentReportLocked()) {
+            return false;
+        }
+
+        $this->isLocked = true;
+        $this->toast('error', 'Laporan periode ini sudah difinalisasi oleh Kanit dan tidak dapat diubah.');
+
+        return true;
+    }
+
     public function updatedNewPhotos()
     {
+        if ($this->blockIfCurrentReportLocked()) {
+            $this->newPhotos = [];
+            $this->photoInputKey++;
+            return;
+        }
+        
         $this->validate([
             'newPhotos' => ['nullable', 'array'],
             'newPhotos.*' => ['image', 'max:5120'],
@@ -172,7 +226,7 @@ class EditDailyReport extends Component
         $this->photos = array_values($this->photos);
     }
 
-    public function removeExistingPhoto($photoId)
+    public function removeExistingPhoto($photoId): void
     {
         $user = auth()->user();
 
@@ -180,22 +234,29 @@ class EditDailyReport extends Component
             abort(403, 'Anda tidak memiliki akses untuk menghapus foto laporan ini.');
         }
 
-        $photo = DailyReportPhoto::where('daily_report_id', $this->report->id)
-            ->where('id', $photoId)
-            ->firstOrFail();
+        $this->isLocked = $this->isCurrentReportLocked();
 
-        $oldValues = $photo->toArray();
+        if ($this->isLocked) {
+            $this->toast('error', 'Laporan periode ini sudah difinalisasi oleh Kanit dan foto tidak dapat dihapus.');
+            return;
+        }
 
-        ActivityLogger::log(
-            module: 'daily_report_photo',
-            action: 'delete',
-            description: 'Menghapus foto laporan kerja harian',
-            subject: $photo,
-            oldValues: $oldValues
-        );
+        $photo = $this->report->photos()
+            ->whereKey($photoId)
+            ->first();
 
-        if ($photo->file_path && Storage::disk('public')->exists($photo->file_path)) {
-            Storage::disk('public')->delete($photo->file_path);
+        if (! $photo) {
+            $this->toast('error', 'Foto tidak ditemukan.');
+            return;
+        }
+
+        if ($this->report->photos()->count() <= 1) {
+            $this->toast('error', 'Laporan wajib memiliki minimal 1 foto dokumentasi.');
+            return;
+        }
+
+        if ($photo->file_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($photo->file_path)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($photo->file_path);
         }
 
         $photo->delete();
@@ -203,7 +264,7 @@ class EditDailyReport extends Component
         $this->report->refresh();
         $this->report->load('photos');
 
-        session()->flash('success', 'Foto laporan berhasil dihapus.');
+        $this->toast('success', 'Foto berhasil dihapus.');
     }
 
     public function update()
@@ -256,6 +317,15 @@ class EditDailyReport extends Component
 
         if (! $user->employee_id || $this->report->employee_id !== $user->employee_id) {
             abort(403, 'Anda tidak memiliki akses untuk mengubah laporan ini.');
+        }
+
+        if ($this->blockIfCurrentReportLocked()) {
+            return;
+        }
+
+        if ($this->isTargetReportDateLocked()) {
+            $this->toast('error', 'Tanggal tujuan berada pada periode yang sudah difinalisasi oleh Kanit.');
+            return;
         }
 
         if (! $this->shouldShowServerField) {
@@ -364,5 +434,10 @@ class EditDailyReport extends Component
     {
         return view('livewire.reports.edit-daily-report')
             ->layout('layouts.app');
+    }
+
+    private function toast(string $type, string $message): void
+    {
+        $this->dispatch('toast', type: $type, message: $message);
     }
 }

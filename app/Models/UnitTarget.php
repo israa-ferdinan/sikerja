@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\UnitTargetSupport;
+use App\Models\UnitTargetProgressUpdate;
 
 class UnitTarget extends Model
 {
@@ -26,6 +27,12 @@ class UnitTarget extends Model
         'object_name',
         'target_quantity',
         'target_unit',
+        'achievement_method',
+        'manual_progress',
+        'manual_status',
+        'manual_progress_note',
+        'manual_progress_updated_by',
+        'manual_progress_updated_at',
         'is_active',
         'created_by',
         'updated_by',
@@ -35,6 +42,8 @@ class UnitTarget extends Model
         'target_year' => 'integer',
         'quarter' => 'integer',
         'target_quantity' => 'integer',
+        'manual_progress' => 'integer',
+        'manual_progress_updated_at' => 'datetime',
         'is_active' => 'boolean',
     ];
 
@@ -66,6 +75,62 @@ class UnitTarget extends Model
     public function updater()
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function manualProgressUpdater()
+    {
+        return $this->belongsTo(User::class, 'manual_progress_updated_by');
+    }
+
+    public function progressUpdates()
+    {
+        return $this->hasMany(UnitTargetProgressUpdate::class, 'unit_target_id')
+            ->latest();
+    }
+
+    public function latestProgressUpdate()
+    {
+        return $this->hasOne(UnitTargetProgressUpdate::class, 'unit_target_id')
+            ->latestOfMany();
+    }
+
+    public function getAchievementMethodLabelAttribute(): string
+    {
+        return match ($this->achievement_method ?? 'auto_report') {
+            'auto_report' => 'Otomatis dari Laporan Harian',
+            'manual_progress' => 'Manual Progress',
+            'manual_status' => 'Manual Status',
+            default => 'Metode Capaian',
+        };
+    }
+
+    public function getAchievementHelpTextAttribute(): string
+    {
+        return match ($this->achievement_method ?? 'auto_report') {
+            'manual_progress' => 'Capaian diperbarui manual dalam bentuk progress persen.',
+            'manual_status' => 'Capaian diperbarui manual berdasarkan status pekerjaan.',
+            default => 'Capaian dihitung otomatis dari laporan harian yang cocok.',
+        };
+    }
+
+    public function getManualStatusLabelAttribute(): string
+    {
+        return match ($this->manual_status ?? 'not_started') {
+            'not_started' => 'Belum Mulai',
+            'in_progress' => 'Berjalan',
+            'completed' => 'Selesai',
+            default => '-',
+        };
+    }
+
+    public function getManualStatusBadgeClassAttribute(): string
+    {
+        return match ($this->manual_status ?? 'not_started') {
+            'completed' => 'bg-green-100 text-green-700',
+            'in_progress' => 'bg-amber-100 text-amber-700',
+            'not_started' => 'bg-gray-100 text-gray-600',
+            default => 'bg-gray-100 text-gray-600',
+        };
     }
 
     public function getPeriodLabelAttribute(): string
@@ -127,6 +192,10 @@ class UnitTarget extends Model
 
     public function getTargetSummaryAttribute(): string
     {
+        if (in_array($this->achievement_method, ['manual_progress', 'manual_status'], true)) {
+            return '100 %';
+        }
+
         return number_format($this->target_quantity, 0, ',', '.') . ' ' . $this->target_unit;
     }
 

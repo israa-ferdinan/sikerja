@@ -1,23 +1,56 @@
 <div class="space-y-6">
-    {{-- Page Header --}}
-    <x-ui.page-header
-        title="Riwayat Laporan Saya"
-        subtitle="Daftar laporan kerja harian yang sudah Anda buat."
+    {{-- Page Hero --}}
+    @php
+        $selectedMonthLabel = ! empty($month)
+            ? \Carbon\Carbon::parse($month . '-01')->translatedFormat('F Y')
+            : 'Bulan berjalan';
+
+        $totalReports = method_exists($reports, 'total')
+            ? $reports->total()
+            : $reports->count();
+    @endphp
+
+    <x-page-hero
+        badge="Riwayat Laporan Pegawai"
+        title="Pantau laporan kerja yang sudah Anda buat"
+        description="Lihat kembali laporan harian, dokumentasi foto, status, dan detail pekerjaan berdasarkan periode yang dipilih."
+        icon="history"
     >
-        <x-slot:action>
-            @if (empty($missingEmployee))
-            <a
-                href="{{ route('pegawai.reports.create') }}"
-                class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5" />
-                </svg>
-                Buat Laporan
-            </a>
-            @endif
-        </x-slot:action>
-    </x-ui.page-header>
+        <x-slot:aside>
+            <div class="rounded-2xl border border-white/10 bg-white/10 p-5 shadow-sm backdrop-blur">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-sm font-semibold text-cyan-100">
+                            Riwayat Laporan
+                        </p>
+                        <p class="mt-2 text-2xl font-bold text-white">
+                            {{ $totalReports }} laporan
+                        </p>
+                    </div>
+
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-400/15 text-cyan-200">
+                        <x-icon name="history" class="h-6 w-6" />
+                    </div>
+                </div>
+
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <span class="inline-flex rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold text-slate-200">
+                        Periode: {{ $selectedMonthLabel }}
+                    </span>
+
+                    @if (empty($missingEmployee))
+                        <a
+                            href="{{ route('pegawai.reports.create') }}"
+                            class="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-950 shadow-sm transition hover:bg-cyan-50"
+                        >
+                            <x-icon name="plus" class="h-3.5 w-3.5" />
+                            Buat Laporan
+                        </a>
+                    @endif
+                </div>
+            </div>
+        </x-slot:aside>
+    </x-page-hero>
 
     @if (!empty($missingEmployee))
         <div class="mb-4 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
@@ -300,15 +333,16 @@
             </div>
         @else
             <x-ui.empty-state
-                icon="📝"
+                icon="file-text"
                 title="Belum ada laporan"
                 message="Laporan kerja harian Anda untuk filter yang dipilih belum tersedia."
             >
                 <x-slot:action>
                     <a
                         href="{{ route('pegawai.reports.create') }}"
-                        class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
                     >
+                        <x-icon name="plus" class="h-4 w-4" />
                         Buat Laporan Pertama
                     </a>
                 </x-slot:action>

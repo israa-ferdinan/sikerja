@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Models\Employee;
 use App\Models\jobDuty;
 use App\Models\Application;
+use App\Models\MonthlyReportApproval;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -62,5 +64,10 @@ class Unit extends Model
     public function tupoksis()
     {
         return $this->hasMany(JobDuty::class);
+    }
+
+    public function monthlyReportApprovals(): HasMany
+    {
+        return $this->hasMany(MonthlyReportApproval::class);
     }
 }

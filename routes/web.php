@@ -19,6 +19,7 @@ use App\Livewire\Admin\DutyDelegations\Index as DutyDelegationIndex;
 use App\Livewire\Admin\ActivityLogs\Index as ActivityLogIndex;
 use App\Livewire\Admin\MasterData\DutyClassifications\Index as DutyClassificationIndex;
 use App\Livewire\Admin\UnitTarget\Index as UnitTargetIndex;
+use App\Livewire\Admin\TargetReport\Index as TargetReportIndex;
 
 use App\Livewire\Kanit\Dashboard as KanitDashboard;
 use App\Livewire\Kanit\ReportMonitoring;
@@ -33,6 +34,7 @@ use App\Livewire\Reports\EditDailyReport;
 use App\Livewire\Reports\ExportMonthlyReport;
 
 use App\Livewire\Profile\ShowProfile;
+use App\Http\Controllers\ReportPhotoController;
 
 use App\Services\ActivityLogger;
 
@@ -56,6 +58,9 @@ Route::middleware(['auth', 'active.user', 'force.password.change'])->group(funct
 
     Route::get('/profile', ShowProfile::class)
         ->name('profile.show');
+
+    Route::get('/reports/photos/{photo}', [ReportPhotoController::class, 'show'])
+    ->name('reports.photos.show');
 
     //Route::get('/reports/create', CreateDailyReport::class)->name('reports.create');
 
@@ -110,6 +115,9 @@ Route::middleware(['role:admin'])
 
         Route::get('/unit-targets', UnitTargetIndex::class)
             ->name('unit-targets.index');
+
+        Route::get('/target-reports', TargetReportIndex::class)
+            ->name('target-reports.index');
     }); 
 
 Route::middleware(['auth', 'kanit'])->prefix('kanit')->name('kanit.')->group(function () {
@@ -127,6 +135,9 @@ Route::middleware(['auth', 'kanit'])->prefix('kanit')->name('kanit.')->group(fun
 
     Route::get('/unit-targets', UnitTargetIndex::class)
         ->name('unit-targets.index');
+
+    Route::get('/target-reports', TargetReportIndex::class)
+        ->name('target-reports.index');
 
     });
 

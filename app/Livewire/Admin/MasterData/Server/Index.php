@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\MasterData\Server;
 
 use App\Models\Server;
+use App\Models\Unit;
 use App\Services\ActivityLogger;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -14,9 +15,11 @@ class Index extends Component
     public $search = '';
 
     public $serverId;
+    public $unit_id;
     public $name;
+    public $hostname;
     public $ip_address;
-    public $domain;
+    public $server_type;
     public $location;
     public $description;
     public $is_active = true;
@@ -27,9 +30,11 @@ class Index extends Component
     protected function rules()
     {
         return [
+            'unit_id' => 'nullable|exists:units,id',
             'name' => 'required|string|max:150',
+            'hostname' => 'nullable|string|max:150',
             'ip_address' => 'nullable|string|max:100',
-            'domain' => 'nullable|string|max:150',
+            'server_type' => 'nullable|string|max:150',
             'location' => 'nullable|string|max:150',
             'description' => 'nullable|string',
             'is_active' => 'boolean',
@@ -53,9 +58,11 @@ class Index extends Component
         $server = Server::findOrFail($id);
 
         $this->serverId = $server->id;
+        $this->unit_id = $server->unit_id;
         $this->name = $server->name;
+        $this->hostname = $server->hostname;
         $this->ip_address = $server->ip_address;
-        $this->domain = $server->domain;
+        $this->server_type = $server->server_type;
         $this->location = $server->location;
         $this->description = $server->description;
         $this->is_active = (bool) $server->is_active;
@@ -66,25 +73,21 @@ class Index extends Component
 
     public function save()
     {
-        $this->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'ip_address' => ['nullable', 'string', 'max:100'],
-            'description' => ['nullable', 'string'],
-            'location' => ['nullable', 'string'],
-            'is_active' => ['boolean'],
-        ]);
+        $validated = $this->validate();
 
         $data = [
-            'name' => $this->name,
-            'ip_address' => $this->ip_address ?: null,
-            'description' => $this->description ?: null,
-            'location' => $this->location ?: null,
-            'is_active' => (bool) $this->is_active,
+            'unit_id' => $validated['unit_id'] ?: null,
+            'name' => $validated['name'],
+            'hostname' => $validated['hostname'] ?: null,
+            'ip_address' => $validated['ip_address'] ?: null,
+            'server_type' => $validated['server_type'] ?: null,
+            'location' => $validated['location'] ?: null,
+            'description' => $validated['description'] ?: null,
+            'is_active' => (bool) $validated['is_active'],
         ];
 
         if ($this->isEdit && $this->serverId) {
             $server = Server::findOrFail($this->serverId);
-
             $oldValues = $server->toArray();
 
             $server->update($data);
@@ -95,10 +98,10 @@ class Index extends Component
                 description: 'Mengubah data server ' . $server->name,
                 subject: $server,
                 oldValues: $oldValues,
-                newValues: $server->fresh()->toArray()
+                newValues: $server->fresh(['unit'])->toArray()
             );
 
-            session()->flash('success', 'Server berhasil diperbarui.');
+            $this->dispatch('toast', type: 'success', message: 'Server berhasil diperbarui.');
         } else {
             $server = Server::create($data);
 
@@ -107,10 +110,10 @@ class Index extends Component
                 action: 'create',
                 description: 'Menambahkan data server ' . $server->name,
                 subject: $server,
-                newValues: $server->fresh()->toArray()
+                newValues: $server->fresh(['unit'])->toArray()
             );
 
-            session()->flash('success', 'Server berhasil ditambahkan.');
+            $this->dispatch('toast', type: 'success', message: 'Server berhasil ditambahkan.');
         }
 
         $this->closeModal();
@@ -118,8 +121,7 @@ class Index extends Component
 
     public function delete($id)
     {
-        $server = Server::findOrFail($id);
-
+        $server = Server::with('unit')->findOrFail($id);
         $oldValues = $server->toArray();
 
         ActivityLogger::log(
@@ -132,7 +134,7 @@ class Index extends Component
 
         $server->delete();
 
-        session()->flash('success', 'Server berhasil dihapus.');
+        $this->dispatch('toast', type: 'success', message: 'Server berhasil dihapus.');
     }
 
     public function closeModal()
@@ -145,9 +147,11 @@ class Index extends Component
     {
         $this->reset([
             'serverId',
+            'unit_id',
             'name',
+            'hostname',
             'ip_address',
-            'domain',
+            'server_type',
             'location',
             'description',
             'isEdit',
@@ -160,20 +164,31 @@ class Index extends Component
     public function render()
     {
         $servers = Server::query()
+            ->with('unit')
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('name', 'like', '%' . $this->search . '%')
+                        ->orWhere('hostname', 'like', '%' . $this->search . '%')
                         ->orWhere('ip_address', 'like', '%' . $this->search . '%')
-                        ->orWhere('domain', 'like', '%' . $this->search . '%')
+                        ->orWhere('server_type', 'like', '%' . $this->search . '%')
                         ->orWhere('location', 'like', '%' . $this->search . '%')
-                        ->orWhere('description', 'like', '%' . $this->search . '%');
+                        ->orWhere('description', 'like', '%' . $this->search . '%')
+                        ->orWhereHas('unit', function ($unitQuery) {
+                            $unitQuery->where('name', 'like', '%' . $this->search . '%');
+                        });
                 });
             })
             ->latest()
             ->paginate(10);
 
+        $units = Unit::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
         return view('livewire.admin.master-data.server.index', [
             'servers' => $servers,
+            'units' => $units,
         ])->layout('layouts.app');
     }
 }

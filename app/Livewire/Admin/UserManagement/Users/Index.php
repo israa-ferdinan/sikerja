@@ -51,12 +51,12 @@ class Index extends Component
         $user = User::findOrFail($userId);
 
         if (auth()->id() === $user->id) {
-            session()->flash('error', 'Password akun sendiri hanya bisa diubah melalui menu Profil Saya.');
+            $this->dispatch('toast', type: 'error', message: 'Password akun sendiri hanya bisa diubah melalui menu Profil Saya.');
             return;
         }
 
         if ($user->role?->name === 'admin') {
-            session()->flash('error', 'Password akun Admin lain tidak bisa direset dari User Management.');
+            $this->dispatch('toast', type: 'error', message: 'Password akun Admin lain tidak bisa direset dari User Management.');
             return;
         }
 
@@ -93,13 +93,13 @@ class Index extends Component
         $user = User::with('role')->findOrFail($this->selectedUserId);
 
         if (auth()->id() === $user->id) {
-            session()->flash('error', 'Password akun sendiri hanya bisa diubah melalui menu Profil Saya.');
+            $this->dispatch('toast', type: 'error', message: 'Password akun sendiri hanya bisa diubah melalui menu Profil Saya.');
             $this->closeResetPasswordModal();
             return;
         }
 
         if ($user->role?->name === 'admin') {
-            session()->flash('error', 'Password akun Admin lain tidak bisa direset dari User Management.');
+            $this->dispatch('toast', type: 'error', message: 'Password akun Admin lain tidak bisa direset dari User Management.');
             $this->closeResetPasswordModal();
             return;
         }
@@ -130,9 +130,9 @@ class Index extends Component
             ]
         );
 
-        session()->flash('success', 'Password user ' . $user->name . ' berhasil direset.');
-
         $this->closeResetPasswordModal();
+
+        $this->dispatch('toast', type: 'success', message: 'Password user ' . $user->name . ' berhasil direset.');
     }
 
     public function closeResetPasswordModal(): void
@@ -156,12 +156,12 @@ class Index extends Component
         $user = User::with('role')->findOrFail($userId);
 
         if (auth()->id() === $user->id && $user->is_active) {
-            session()->flash('error', 'Akun yang sedang digunakan tidak bisa dinonaktifkan.');
+            $this->dispatch('toast', type: 'error', message: 'Akun yang sedang digunakan tidak bisa dinonaktifkan.');
             return;
         }
 
         if ($user->role?->name === 'admin') {
-            session()->flash('error', 'Akun Admin tidak bisa diaktifkan/nonaktifkan dari User Management.');
+            $this->dispatch('toast', type: 'error', message: 'Akun Admin tidak bisa diaktifkan/nonaktifkan dari User Management.');
             return;
         }
 
@@ -184,9 +184,10 @@ class Index extends Component
             newValues: $freshUser->makeHidden(['password', 'remember_token'])->toArray()
         );
 
-        session()->flash(
-            'success',
-            $freshUser->is_active
+        $this->dispatch(
+            'toast',
+            type: 'success',
+            message: $freshUser->is_active
                 ? 'User berhasil diaktifkan.'
                 : 'User berhasil dinonaktifkan.'
         );
@@ -229,11 +230,15 @@ class Index extends Component
             ->get();
 
         $totalUsers = User::query()->count();
+        $activeUsers = User::query()->where('is_active', true)->count();
+        $inactiveUsers = User::query()->where('is_active', false)->count();
 
         return view('livewire.admin.user-management.users.index', [
             'users' => $users,
             'roles' => $roles,
             'totalUsers' => $totalUsers,
+            'activeUsers' => $activeUsers,
+            'inactiveUsers' => $inactiveUsers,
         ]);
     }
 }

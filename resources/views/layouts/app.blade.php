@@ -12,9 +12,9 @@
 <body
     x-data="{ sidebarOpen: false }"
     x-bind:class="{ 'overflow-hidden': sidebarOpen }"
-    class="overflow-x-hidden font-sans antialiased bg-gray-100"
+    class="overflow-x-hidden font-sans antialiased bg-slate-100 text-slate-900"
 >
-    <div class="min-h-screen">
+    <div class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.12),_transparent_32rem),linear-gradient(180deg,_#f8fafc_0%,_#eef2f7_100%)]">
 
         @auth
             @include('layouts.mobile-sidebar')
@@ -31,6 +31,8 @@
             </main>
         </div>
 
+        <x-toast />
+        <x-ui.confirm-modal />
     </div>
 
     @livewireScripts

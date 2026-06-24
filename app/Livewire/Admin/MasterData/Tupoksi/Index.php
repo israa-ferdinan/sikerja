@@ -115,7 +115,10 @@ class Index extends Component
                 newValues: $duty->toArray()
             );
 
-            session()->flash('success', 'Tupoksi berhasil diperbarui.');
+            session()->flash('toast', [
+                'type' => 'success',
+                'message' => 'Tupoksi berhasil diperbarui.',
+            ]);
         } else {
             $duty = JobDuty::create($validated);
 
@@ -127,7 +130,10 @@ class Index extends Component
                 newValues: $duty->fresh()->toArray()
             );
 
-            session()->flash('success', 'Tupoksi berhasil ditambahkan.');
+            session()->flash('toast', [
+                'type' => 'success',
+                'message' => 'Tupoksi berhasil ditambahkan.',
+            ]);
         }
 
         $this->closeModal();
@@ -149,7 +155,10 @@ class Index extends Component
 
         $duty->delete();
 
-        session()->flash('success', 'Tupoksi berhasil dihapus.');
+        session()->flash('toast', [
+            'type' => 'success',
+            'message' => 'Tupoksi berhasil dihapus.',
+        ]);
     }
 
     public function closeModal()

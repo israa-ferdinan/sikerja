@@ -7,13 +7,16 @@ use App\Models\UnitTarget;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 
-
 class UnitTargetAchievementService
 {
     public function periodDateRange(UnitTarget $target): array
     {
         $year = (int) $target->target_year;
 
+        // NOTE:
+        // R7 final memakai target tahunan.
+        // Logic quarterly tetap dipertahankan sementara untuk backward compatibility
+        // jika masih ada data lama yang period_type-nya quarterly.
         if ($target->period_type === 'quarterly') {
             return match ((int) $target->quarter) {
                 1 => [
@@ -82,14 +85,41 @@ class UnitTargetAchievementService
             });
     }
 
+    public function achievementMethod(UnitTarget $target): string
+    {
+        return $target->achievement_method ?: 'auto_report';
+    }
+
     public function achievementCount(UnitTarget $target): int
     {
-        return $this->matchingDailyReportsQuery($target)->count();
+        return match ($this->achievementMethod($target)) {
+            'manual_progress' => (int) $target->manual_progress,
+            'manual_status' => $this->manualStatusProgressValue($target),
+            default => $this->matchingDailyReportsQuery($target)->count(),
+        };
+    }
+
+    public function targetQuantity(UnitTarget $target): int
+    {
+        return match ($this->achievementMethod($target)) {
+            'manual_progress',
+            'manual_status' => 100,
+            default => max((int) $target->target_quantity, 0),
+        };
+    }
+
+    public function targetUnit(UnitTarget $target): string
+    {
+        return match ($this->achievementMethod($target)) {
+            'manual_progress',
+            'manual_status' => '%',
+            default => $target->target_unit ?: 'kegiatan',
+        };
     }
 
     public function achievementPercentage(UnitTarget $target): float
     {
-        $targetQuantity = (int) $target->target_quantity;
+        $targetQuantity = $this->targetQuantity($target);
 
         if ($targetQuantity <= 0) {
             return 0;
@@ -102,6 +132,14 @@ class UnitTargetAchievementService
 
     public function statusLabel(UnitTarget $target): string
     {
+        if ($this->achievementMethod($target) === 'manual_status') {
+            return match ($target->manual_status ?? 'not_started') {
+                'completed' => 'Selesai',
+                'in_progress' => 'Berjalan',
+                default => 'Belum Mulai',
+            };
+        }
+
         $percentage = $this->achievementPercentage($target);
 
         if ($percentage >= 100) {
@@ -121,6 +159,14 @@ class UnitTargetAchievementService
 
     public function statusBadgeClass(UnitTarget $target): string
     {
+        if ($this->achievementMethod($target) === 'manual_status') {
+            return match ($target->manual_status ?? 'not_started') {
+                'completed' => 'bg-green-100 text-green-700',
+                'in_progress' => 'bg-amber-100 text-amber-700',
+                default => 'bg-gray-100 text-gray-600',
+            };
+        }
+
         $percentage = $this->achievementPercentage($target);
 
         if ($percentage >= 100) {
@@ -140,21 +186,19 @@ class UnitTargetAchievementService
 
     public function summary(UnitTarget $target): array
     {
-        $achievementCount = $this->achievementCount($target);
-        $targetQuantity = (int) $target->target_quantity;
-
-        $achievementPercentage = 0;
-
-        if ($targetQuantity > 0) {
-            $achievementPercentage = round(min(($achievementCount / $targetQuantity) * 100, 100), 2);
-        }
-
-        $remainingTarget = max($targetQuantity - $achievementCount, 0);
-
         [$startDate, $endDate] = $this->periodDateRange($target);
 
+        $achievementMethod = $this->achievementMethod($target);
+        $targetQuantity = $this->targetQuantity($target);
+        $achievementCount = $this->achievementCount($target);
+        $achievementPercentage = $this->achievementPercentage($target);
+        $remainingTarget = max($targetQuantity - $achievementCount, 0);
+
         return [
+            'achievement_method' => $achievementMethod,
+            'achievement_method_label' => $this->achievementMethodLabel($achievementMethod),
             'target_quantity' => $targetQuantity,
+            'target_unit' => $this->targetUnit($target),
             'achievement_count' => $achievementCount,
             'remaining_target' => $remainingTarget,
             'achievement_percentage' => $achievementPercentage,
@@ -164,5 +208,23 @@ class UnitTargetAchievementService
             'period_end' => $endDate,
             'period_label' => $startDate->format('d/m/Y') . ' - ' . $endDate->format('d/m/Y'),
         ];
+    }
+
+    private function manualStatusProgressValue(UnitTarget $target): int
+    {
+        return match ($target->manual_status ?? 'not_started') {
+            'completed' => 100,
+            'in_progress' => 50,
+            default => 0,
+        };
+    }
+
+    private function achievementMethodLabel(string $method): string
+    {
+        return match ($method) {
+            'manual_progress' => 'Manual Progress',
+            'manual_status' => 'Manual Status',
+            default => 'Otomatis dari Laporan Harian',
+        };
     }
 }

@@ -9,15 +9,21 @@ use App\Models\JobDuty;
 use App\Models\DutyDelegation;
 use App\Models\ReportTemplate;
 use App\Models\Server;
+
 use Carbon\Carbon;
+
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
+
 use Livewire\Component;
 use Livewire\WithFileUploads;
+
 use App\Services\ActivityLogger;
+use App\Services\MonthlyReportApprovalService;
 
 class CreateDailyReport extends Component
 {
@@ -208,6 +214,13 @@ class CreateDailyReport extends Component
 
     public function updatedNewPhotos()
     {
+
+        if ($this->blockIfSelectedReportDateLocked()) {
+            $this->newPhotos = [];
+            $this->photoInputKey++;
+            return;
+        }
+
         $this->validate([
             'newPhotos' => ['nullable', 'array'],
             'newPhotos.*' => ['image', 'max:5120'],
@@ -236,12 +249,18 @@ class CreateDailyReport extends Component
         $this->photos = array_values($this->photos);
     }
 
+
+    private function toast(string $type, string $message): void
+    {
+        $this->dispatch('toast', type: $type, message: $message);
+    }
+
     public function cloneLastReport(): void
     {
         $user = Auth::user();
 
         if (! $user->employee_id) {
-            session()->flash('error', 'Akun belum terhubung dengan data pegawai.');
+            $this->toast('error', 'Akun belum terhubung dengan data pegawai.');
             return;
         }
 
@@ -252,7 +271,7 @@ class CreateDailyReport extends Component
             ->first();
 
         if (! $lastReport) {
-            session()->flash('error', 'Belum ada laporan sebelumnya untuk diclone.');
+            $this->toast('warning', 'Belum ada laporan sebelumnya untuk diclone.');
             return;
         }
 
@@ -263,7 +282,7 @@ class CreateDailyReport extends Component
             ->exists();
 
         if (! $isDutyAssignedToEmployee) {
-            session()->flash('error', 'Laporan terakhir menggunakan tupoksi yang belum ditugaskan ke akun Anda.');
+            $this->toast('error', 'Laporan terakhir menggunakan tupoksi yang belum ditugaskan ke akun Anda.');
             return;
         }
 
@@ -287,7 +306,32 @@ class CreateDailyReport extends Component
         $this->form['description'] = $lastReport->description ?? '';
         $this->form['notes'] = $lastReport->notes ?? '';
 
-        session()->flash('success', 'Laporan terakhir berhasil diclone. Silakan sesuaikan sebelum disimpan.');
+        $this->toast('success', 'Laporan terakhir berhasil diclone. Silakan sesuaikan sebelum disimpan.');
+    }
+
+    private function isSelectedReportDateLocked(): bool
+    {
+        $user = Auth::user();
+
+        if (! $user?->employee?->unit_id || empty($this->form['report_date'])) {
+            return false;
+        }
+
+        return app(MonthlyReportApprovalService::class)->isReportDateLocked(
+            unitId: (int) $user->employee->unit_id,
+            reportDate: $this->form['report_date']
+        );
+    }
+
+    private function blockIfSelectedReportDateLocked(): bool
+    {
+        if (! $this->isSelectedReportDateLocked()) {
+            return false;
+        }
+
+        $this->toast('error', 'Laporan periode ini sudah difinalisasi oleh Kanit dan tidak dapat diubah.');
+
+        return true;
     }
 
     public function save()
@@ -344,6 +388,14 @@ class CreateDailyReport extends Component
 
         $employee = $user->employee;
         $form = $validated['form'];
+
+        if (app(MonthlyReportApprovalService::class)->isReportDateLocked(
+            unitId: (int) $employee->unit_id,
+            reportDate: $form['report_date']
+        )) {
+            $this->toast('error', 'Laporan periode ini sudah difinalisasi oleh Kanit dan tidak dapat ditambah.');
+            return;
+        }
 
         if (! $this->shouldShowServerField) {
             $form['server_id'] = '';

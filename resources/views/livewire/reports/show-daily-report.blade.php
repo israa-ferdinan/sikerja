@@ -1,221 +1,326 @@
-<div class="p-6">
-    <div class="max-w-5xl mx-auto">
+<div class="relative z-10 p-4 sm:p-6">
+    <div class="mx-auto max-w-6xl space-y-6">
+        <x-page-hero
+            badge="Detail Laporan"
+            title="{{ $report->title }}"
+            description="{{ \Illuminate\Support\Str::limit($report->description, 180) }}"
+            icon="file-text"
+        >
+            <x-slot:aside>
+                <div class="space-y-4">
+                    <div class="rounded-2xl border border-white/10 bg-white/10 p-5 shadow-sm backdrop-blur">
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="min-w-0">
+                                <p class="text-sm font-semibold text-cyan-100">Pelapor</p>
+                                <p class="mt-2 truncate text-xl font-bold text-white">
+                                    {{ $report->reportedByEmployee?->name ?? $report->employee?->name ?? '-' }}
+                                </p>
+                                <p class="mt-1 text-xs leading-5 text-slate-300">
+                                    {{ $report->reportedByEmployee?->jobPosition?->name ?? $report->employee?->jobPosition?->name ?? '-' }}
+                                </p>
+                            </div>
 
-        <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-800">
-                    Detail Laporan Kerja
-                </h1>
-                <p class="text-sm text-gray-500 mt-1">
-                    Detail laporan kerja harian yang sudah Anda input.
-                </p>
+                            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cyan-400/15 text-cyan-200">
+                                <x-icon name="users" class="h-6 w-6" />
+                            </div>
+                        </div>
+
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <span class="inline-flex rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold text-slate-200">
+                                {{ $report->is_delegated ? 'Delegasi' : 'Normal' }}
+                            </span>
+                            <span class="inline-flex rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold text-slate-200">
+                                {{ $report->photos->count() }} foto
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-2">
+                        <a
+                            href="{{ route('pegawai.reports.index') }}"
+                            class="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-white/15 focus:outline-none focus:ring-4 focus:ring-cyan-300/20"
+                        >
+                            <x-icon name="arrow-left" class="h-4 w-4" />
+                            Kembali
+                        </a>
+
+                        @if (! $isLocked)
+                            <a
+                                href="{{ route('pegawai.reports.edit', $report) }}"
+                                class="inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-300/20 bg-cyan-400/15 px-3 py-2 text-xs font-semibold text-cyan-100 shadow-sm transition hover:bg-cyan-400/20 focus:outline-none focus:ring-4 focus:ring-cyan-300/20"
+                            >
+                                <x-icon name="edit-3" class="h-4 w-4" />
+                                Edit
+                            </a>
+
+                            <button
+                                type="button"
+                                x-data
+                                x-on:click="$dispatch('open-confirm-modal', {
+                                    title: 'Hapus laporan?',
+                                    message: 'Laporan ini beserta foto terkait akan dihapus. Tindakan ini tidak bisa dibatalkan.',
+                                    confirmText: 'Ya, Hapus',
+                                    cancelText: 'Batal',
+                                    variant: 'danger',
+                                    onConfirm: () => $wire.delete()
+                                })"
+                                class="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-rose-400/40 bg-rose-500/10 px-5 text-sm font-semibold text-rose-100 transition hover:bg-rose-500/20 hover:text-white"
+                            >
+                                <x-icon name="trash-2" class="h-4 w-4" />
+                                <span>Hapus</span>
+                            </button>
+                        @else
+                            <span class="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-emerald-300/20 bg-emerald-400/15 px-5 text-sm font-semibold text-emerald-100">
+                                <x-icon name="lock" class="h-4 w-4" />
+                                Sudah Final
+                            </span>
+                        @endif
+                    </div>
+                </div>
+            </x-slot:aside>
+        </x-page-hero>
+
+        @if (session()->has('error'))
+            <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+                {{ session('error') }}
             </div>
+        @endif
 
-            <div class="flex items-center gap-2">
-                <a
-                    href="{{ route('pegawai.reports.index') }}"
-                    class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm"
-                >
-                    Kembali
-                </a>
-
-                <a
-                    href="{{ route('pegawai.reports.edit', $report) }}"
-                    class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm"
-                >
-                    Edit
-                </a>
-
-                <button
-                    type="button"
-                    wire:click="delete"
-                    wire:confirm="Yakin ingin menghapus laporan ini? Foto laporan juga akan ikut terhapus."
-                    class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm"
-                >
-                    Hapus
-                </button>
+        @if ($isLocked)
+            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+                Laporan ini berada pada periode yang sudah difinalisasi oleh Kanit. Data laporan dan foto tidak dapat diubah.
             </div>
-        </div>
+        @endif
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="p-6 space-y-6">
+        <div class="grid grid-cols-1 gap-6 xl:grid-cols-12">
+            <div class="space-y-6 xl:col-span-8">
+                <x-ui.card>
+                    <div class="mb-5 flex items-start gap-3">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
+                            <x-icon name="file-text" class="h-5 w-5" />
+                        </div>
 
-                <div>
-                    <h2 class="text-xl font-semibold text-gray-800">
-                        {{ $report->title }}
-                    </h2>
-                    <p class="text-sm text-gray-500 mt-1">
-                        {{ $report->report_date?->format('d M Y') }}
-                    </p>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="rounded-lg bg-gray-50 p-4">
-                        <div class="text-xs text-gray-500">Tupoksi</div>
-                        <div class="text-sm font-medium text-gray-800 mt-1">
-                            {{ $report->duty->name ?? '-' }}
-                            @if ($report->is_delegated)
-                                <span class="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-1 text-xs font-semibold text-purple-700">
-                                    Delegasi
-                                </span>
-                            @else
-                                <span class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">
-                                    Normal
-                                </span>
-                            @endif
+                        <div>
+                            <h2 class="text-base font-bold text-slate-900">Deskripsi Kegiatan</h2>
+                            <p class="mt-1 text-sm leading-6 text-slate-500">
+                                Uraian pekerjaan yang dilakukan pada laporan harian.
+                            </p>
                         </div>
                     </div>
 
-                    <div class="rounded-lg bg-blue-50 border border-blue-100 p-4">
-                        <div class="text-xs text-blue-600 font-semibold">
-                            Klasifikasi & Objek Tupoksi
-                        </div>
-
-                        <div class="mt-3 space-y-2 text-sm">
-                            <div>
-                                <div class="text-xs text-blue-500">Klasifikasi</div>
-                                <div class="font-medium text-blue-900">
-                                    {{ $report->duty?->classification?->name ?? 'Tanpa klasifikasi' }}
-                                </div>
-                            </div>
-
-                            <div>
-                                <div class="text-xs text-blue-500">Jenis Objek</div>
-                                <div class="font-medium text-blue-900">
-                                    {{ $report->duty?->object_type_label ?? '-' }}
-                                </div>
-                            </div>
-
-                            <div>
-                                <div class="text-xs text-blue-500">Detail Objek</div>
-                                <div class="font-medium text-blue-900">
-                                    Dicatat pada laporan harian
-                                </div>
-                            </div>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                        <div class="whitespace-pre-line text-sm leading-7 text-slate-700">
+                            {{ $report->description }}
                         </div>
                     </div>
-
-                    <div class="rounded-lg bg-gray-50 p-4">
-                        <div class="text-xs text-gray-500">
-                            Informasi Pelapor
-                        </div>
-
-                        <div class="mt-2 space-y-1 text-sm text-gray-700">
-                            @if ($report->is_delegated)
-                                <div>
-                                    Pemilik Tupoksi:
-                                    <span class="font-medium text-gray-800">
-                                        {{ $report->dutyOwnerEmployee?->name ?? '-' }}
-                                    </span>
-                                </div>
-
-                                <div>
-                                    Dilaporkan Oleh:
-                                    <span class="font-medium text-gray-800">
-                                        {{ $report->reportedByEmployee?->name ?? '-' }}
-                                    </span>
-                                </div>
-                            @else
-                                <div>
-                                    Dilaporkan Oleh:
-                                    <span class="font-medium text-gray-800">
-                                        {{ $report->reportedByEmployee?->name ?? $report->employee?->name ?? '-' }}
-                                    </span>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-
-                    @if ($report->is_delegated && $report->delegation)
-                        <div class="rounded-lg bg-purple-50 border border-purple-100 p-4">
-                            <div class="text-xs text-purple-600 font-semibold">
-                                Periode Delegasi
-                            </div>
-
-                            <div class="mt-1 text-sm font-medium text-purple-900">
-                                {{ $report->delegation->start_date?->format('d/m/Y') ?? '-' }}
-                                s.d.
-                                {{ $report->delegation->end_date?->format('d/m/Y') ?? 'Tidak ditentukan' }}
-                            </div>
-                        </div>
-                    @endif
-
-                    @if ($report->server)
-                        <div class="rounded-lg bg-gray-50 p-4">
-                            <div class="text-xs text-gray-500">Server</div>
-                            <div class="text-sm font-medium text-gray-800 mt-1">
-                                {{ $report->server?->name }}
-                            </div>
-                        </div>
-                    @endif
-
-                    @if ($report->application)
-                        <div class="rounded-lg bg-gray-50 p-4">
-                            <div class="text-xs text-gray-500">Aplikasi</div>
-                            <div class="text-sm font-medium text-gray-800 mt-1">
-                                {{ $report->application?->name }}
-                            </div>
-                        </div>
-                    @endif
-
-                    @if (! $report->server && ! $report->application)
-                        <div class="rounded-lg bg-gray-50 p-4 md:col-span-2">
-                            <div class="text-xs text-gray-500">Objek Detail</div>
-                            <div class="text-sm font-medium text-gray-800 mt-1">
-                                Tidak menggunakan server atau aplikasi khusus.
-                            </div>
-                        </div>
-                    @endif
-                </div>
-
-                <div>
-                    <h3 class="text-sm font-semibold text-gray-700 mb-2">
-                        Deskripsi Kegiatan
-                    </h3>
-                    <div class="prose max-w-none text-gray-700 whitespace-pre-line">
-                        {{ $report->description }}
-                    </div>
-                </div>
+                </x-ui.card>
 
                 @if ($report->notes)
-                    <div>
-                        <h3 class="text-sm font-semibold text-gray-700 mb-2">
-                            Catatan Tambahan
-                        </h3>
-                        <div class="rounded-lg bg-yellow-50 border border-yellow-100 p-4 text-sm text-yellow-800 whitespace-pre-line">
-                            {{ $report->notes }}
+                    <x-ui.card>
+                        <div class="mb-5 flex items-start gap-3">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
+                                <x-icon name="message-square" class="h-5 w-5" />
+                            </div>
+
+                            <div>
+                                <h2 class="text-base font-bold text-slate-900">Catatan / Hasil Pekerjaan</h2>
+                                <p class="mt-1 text-sm leading-6 text-slate-500">
+                                    Catatan tambahan, hasil pekerjaan, kendala, atau tindak lanjut.
+                                </p>
+                            </div>
                         </div>
-                    </div>
+
+                        <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+                            <div class="whitespace-pre-line text-sm leading-7 text-amber-900">
+                                {{ $report->notes }}
+                            </div>
+                        </div>
+                    </x-ui.card>
                 @endif
 
-                <div>
-                    <h3 class="text-sm font-semibold text-gray-700 mb-3">
-                        Foto Dokumentasi
-                    </h3>
+                <x-ui.card>
+                    <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div class="flex items-start gap-3">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+                                <x-icon name="image" class="h-5 w-5" />
+                            </div>
+
+                            <div>
+                                <h2 class="text-base font-bold text-slate-900">Foto Dokumentasi</h2>
+                                <p class="mt-1 text-sm leading-6 text-slate-500">
+                                    Bukti kegiatan yang dilampirkan bersama laporan.
+                                </p>
+                            </div>
+                        </div>
+
+                        <span class="inline-flex w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 ring-1 ring-slate-200">
+                            {{ $report->photos->count() }} foto
+                        </span>
+                    </div>
 
                     @if ($report->photos->count() > 0)
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            @foreach ($report->photos as $photo)
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            @foreach ($report->photos as $index => $photo)
                                 <a
                                     href="{{ asset('storage/' . $photo->file_path) }}"
                                     target="_blank"
-                                    class="block border rounded-lg overflow-hidden bg-gray-50 hover:opacity-90"
+                                    class="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-cyan-200 hover:shadow-md"
                                 >
-                                    <img
-                                        src="{{ asset('storage/' . $photo->file_path) }}"
-                                        class="w-full h-40 object-cover"
-                                        alt="Foto laporan"
-                                    >
+                                    <div class="relative">
+                                        <img
+                                            src="{{ asset('storage/' . $photo->file_path) }}"
+                                            class="h-44 w-full object-cover transition duration-300 group-hover:scale-105"
+                                            alt="Foto laporan {{ $index + 1 }}"
+                                        >
+
+                                        <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/85 to-transparent px-4 pb-3 pt-10">
+                                            <div class="flex items-center justify-between gap-3">
+                                                <span class="text-xs font-bold text-white">Foto {{ $index + 1 }}</span>
+                                                <span class="inline-flex rounded-full bg-white/15 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur">Lihat</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </a>
                             @endforeach
                         </div>
                     @else
-                        <p class="text-sm text-gray-500">
-                            Tidak ada foto dokumentasi.
-                        </p>
+                        <x-ui.empty-state
+                            icon="image"
+                            title="Tidak ada foto dokumentasi"
+                            message="Laporan ini belum memiliki foto pendukung."
+                        />
                     @endif
-                </div>
+                </x-ui.card>
+            </div>
 
+            <div class="space-y-6 xl:col-span-4">
+                <x-ui.card>
+                    <div class="mb-5 flex items-start gap-3">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
+                            <x-icon name="clock" class="h-5 w-5" />
+                        </div>
+
+                        <div>
+                            <h2 class="text-base font-bold text-slate-900">Informasi Laporan</h2>
+                            <p class="mt-1 text-sm leading-6 text-slate-500">Ringkasan data utama laporan kerja.</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Tanggal</p>
+                            <p class="mt-1 text-sm font-semibold text-slate-900">
+                                {{ $report->report_date?->translatedFormat('d F Y') ?? '-' }}
+                            </p>
+                        </div>
+
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Unit</p>
+                            <p class="mt-1 text-sm font-semibold text-slate-900">{{ $report->unit?->name ?? '-' }}</p>
+                        </div>
+
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Pelapor</p>
+                            <p class="mt-1 text-sm font-semibold text-slate-900">
+                                {{ $report->reportedByEmployee?->name ?? $report->employee?->name ?? '-' }}
+                            </p>
+                        </div>
+                    </div>
+                </x-ui.card>
+
+                <x-ui.card>
+                    <div class="mb-5 flex items-start gap-3">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+                            <x-icon name="check-square" class="h-5 w-5" />
+                        </div>
+
+                        <div>
+                            <h2 class="text-base font-bold text-slate-900">Tupoksi & Objek</h2>
+                            <p class="mt-1 text-sm leading-6 text-slate-500">Informasi tupoksi yang digunakan pada laporan.</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="rounded-2xl border border-cyan-100 bg-cyan-50 p-4">
+                            <div class="mb-2 flex flex-wrap items-center gap-2">
+                                @if ($report->is_delegated)
+                                    <span class="inline-flex rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700 ring-1 ring-indigo-100">Delegasi</span>
+                                @else
+                                    <span class="inline-flex rounded-full bg-cyan-100 px-2.5 py-1 text-xs font-bold text-cyan-700 ring-1 ring-cyan-200">Normal</span>
+                                @endif
+
+                                @if($report->duty?->classification)
+                                    <span class="inline-flex rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 ring-1 ring-cyan-100">
+                                        {{ $report->duty->classification->name }}
+                                    </span>
+                                @endif
+                            </div>
+
+                            <p class="text-sm font-bold leading-6 text-slate-900">{{ $report->duty->name ?? '-' }}</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-3">
+                            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Jenis Objek</p>
+                                <p class="mt-1 text-sm font-semibold text-slate-900">
+                                    {{ $report->duty?->object_type_label ?? '-' }}
+                                </p>
+                            </div>
+
+                            @if ($report->server)
+                                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                    <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Server</p>
+                                    <p class="mt-1 text-sm font-semibold text-slate-900">{{ $report->server?->name }}</p>
+                                </div>
+                            @endif
+
+                            @if ($report->application)
+                                <div class="rounded-2xl border border-cyan-100 bg-cyan-50 p-4">
+                                    <p class="text-xs font-bold uppercase tracking-wide text-cyan-700">Aplikasi</p>
+                                    <p class="mt-1 text-sm font-semibold text-cyan-950">{{ $report->application?->name }}</p>
+                                </div>
+                            @endif
+
+                            @if (! $report->server && ! $report->application)
+                                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                    <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Objek Detail</p>
+                                    <p class="mt-1 text-sm font-semibold text-slate-900">
+                                        Tidak menggunakan server atau aplikasi khusus.
+                                    </p>
+                                </div>
+                            @endif
+                        </div>
+
+                        @if ($report->is_delegated)
+                            <div class="rounded-2xl border border-indigo-100 bg-indigo-50 p-4">
+                                <p class="text-xs font-bold uppercase tracking-wide text-indigo-700">Informasi Delegasi</p>
+
+                                <div class="mt-2 space-y-2 text-sm leading-6 text-indigo-900">
+                                    <div>
+                                        Pemilik Tupoksi:
+                                        <span class="font-bold">{{ $report->dutyOwnerEmployee?->name ?? '-' }}</span>
+                                    </div>
+
+                                    <div>
+                                        Dilaporkan Oleh:
+                                        <span class="font-bold">{{ $report->reportedByEmployee?->name ?? '-' }}</span>
+                                    </div>
+
+                                    @if ($report->delegation)
+                                        <div>
+                                            Periode:
+                                            <span class="font-bold">
+                                                {{ $report->delegation->start_date?->format('d/m/Y') ?? '-' }}
+                                                s.d.
+                                                {{ $report->delegation->end_date?->format('d/m/Y') ?? 'Tidak ditentukan' }}
+                                            </span>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </x-ui.card>
             </div>
         </div>
     </div>

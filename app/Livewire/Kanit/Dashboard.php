@@ -104,15 +104,17 @@ class Dashboard extends Component
         $achievementService = app(UnitTargetAchievementService::class);
 
         $targets = UnitTarget::query()
-            ->with([
-                'classification',
-                'server',
-                'application',
-            ])
-            ->where('unit_id', $unitId)
-            ->where('target_year', now()->year)
-            ->where('is_active', true)
-            ->get();
+        ->with([
+            'classification',
+            'server',
+            'application',
+            'manualProgressUpdater',
+        ])
+        ->where('unit_id', $unitId)
+        ->where('target_year', now()->year)
+        ->where('period_type', 'annual')
+        ->where('is_active', true)
+        ->get();
 
         $this->activeTargets = $targets->count();
 
@@ -132,13 +134,21 @@ class Dashboard extends Component
                 return [
                     'id' => $target->id,
                     'title' => $this->targetDisplayTitle($target),
-                    'period_label' => $summary['period_label'],
+
+                    // R7: target final adalah target tahunan.
+                    'period_label' => 'Tahun ' . $target->target_year,
+
+                    'achievement_method' => $summary['achievement_method'] ?? 'auto_report',
+                    'achievement_method_label' => $summary['achievement_method_label'] ?? $target->achievement_method_label,
                     'target_quantity' => $summary['target_quantity'],
+                    'target_unit' => $summary['target_unit'] ?? $target->target_unit,
+                    'target_summary' => $target->target_summary,
                     'achievement_count' => $summary['achievement_count'],
                     'remaining_target' => $summary['remaining_target'],
                     'achievement_percentage' => $summary['achievement_percentage'],
                     'status_label' => $summary['status_label'],
                     'status_badge_class' => $summary['status_badge_class'],
+                    'manual_progress_updated_at' => $target->manual_progress_updated_at?->format('d/m/Y H:i'),
                 ];
             })
             ->values();

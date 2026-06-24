@@ -56,11 +56,11 @@ class Index extends Component
 
         $this->applicationId = $application->id;
         $this->unit_id = $application->unit_id;
+        $this->server_id = $application->server_id;
         $this->name = $application->name;
         $this->url = $application->url;
         $this->description = $application->description;
         $this->is_active = (bool) $application->is_active;
-        $this->server_id = $application->server_id;
 
         $this->isEdit = true;
         $this->showModal = true;
@@ -68,27 +68,19 @@ class Index extends Component
 
     public function save()
     {
-        $this->validate([
-            'unit_id' => ['nullable', 'exists:units,id'],
-            'server_id' => ['nullable', 'exists:servers,id'],
-            'name' => ['required', 'string', 'max:255'],
-            'url' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'is_active' => ['boolean'],
-        ]);
+        $validated = $this->validate();
 
         $data = [
-            'unit_id' => $this->unit_id ?: null,
-            'server_id' => $this->server_id ?: null,
-            'name' => $this->name,
-            'url' => $this->url ?: null,
-            'description' => $this->description ?: null,
-            'is_active' => (bool) $this->is_active,
+            'unit_id' => $validated['unit_id'] ?: null,
+            'server_id' => $validated['server_id'] ?: null,
+            'name' => $validated['name'],
+            'url' => $validated['url'] ?: null,
+            'description' => $validated['description'] ?: null,
+            'is_active' => (bool) $validated['is_active'],
         ];
 
         if ($this->isEdit && $this->applicationId) {
             $application = Application::findOrFail($this->applicationId);
-
             $oldValues = $application->toArray();
 
             $application->update($data);
@@ -99,10 +91,10 @@ class Index extends Component
                 description: 'Mengubah data aplikasi ' . $application->name,
                 subject: $application,
                 oldValues: $oldValues,
-                newValues: $application->fresh(['server'])->toArray()
+                newValues: $application->fresh(['unit', 'server'])->toArray()
             );
 
-            session()->flash('success', 'Aplikasi berhasil diperbarui.');
+            $this->dispatch('toast', type: 'success', message: 'Aplikasi berhasil diperbarui.');
         } else {
             $application = Application::create($data);
 
@@ -111,10 +103,10 @@ class Index extends Component
                 action: 'create',
                 description: 'Menambahkan data aplikasi ' . $application->name,
                 subject: $application,
-                newValues: $application->fresh(['server'])->toArray()
+                newValues: $application->fresh(['unit', 'server'])->toArray()
             );
 
-            session()->flash('success', 'Aplikasi berhasil ditambahkan.');
+            $this->dispatch('toast', type: 'success', message: 'Aplikasi berhasil ditambahkan.');
         }
 
         $this->closeModal();
@@ -122,8 +114,7 @@ class Index extends Component
 
     public function delete($id)
     {
-        $application = Application::with('server')->findOrFail($id);
-
+        $application = Application::with(['unit', 'server'])->findOrFail($id);
         $oldValues = $application->toArray();
 
         ActivityLogger::log(
@@ -136,7 +127,7 @@ class Index extends Component
 
         $application->delete();
 
-        session()->flash('success', 'Aplikasi berhasil dihapus.');
+        $this->dispatch('toast', type: 'success', message: 'Aplikasi berhasil dihapus.');
     }
 
     public function closeModal()
@@ -175,8 +166,8 @@ class Index extends Component
                         })
                         ->orWhereHas('server', function ($serverQuery) {
                             $serverQuery->where('name', 'like', '%' . $this->search . '%')
-                                ->orWhere('ip_address', 'like', '%' . $this->search . '%')
-                                ->orWhere('domain', 'like', '%' . $this->search . '%');
+                                ->orWhere('hostname', 'like', '%' . $this->search . '%')
+                                ->orWhere('ip_address', 'like', '%' . $this->search . '%');
                         });
                 });
             })

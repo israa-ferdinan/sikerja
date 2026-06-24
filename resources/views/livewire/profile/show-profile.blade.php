@@ -171,6 +171,141 @@
         </div>
     </div>
 
+        <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+                <h2 class="text-base font-semibold text-gray-900">
+                    Tanda Tangan Digital Kanit
+                </h2>
+
+                <p class="mt-1 text-sm leading-6 text-gray-500">
+                    Upload gambar tanda tangan untuk digunakan pada finalisasi dan export laporan bulanan.
+                    Format yang didukung: PNG, JPG, JPEG, atau WEBP. Maksimal 1 MB.
+                </p>
+            </div>
+
+            @if ($employee?->signature_path)
+                <span class="inline-flex w-fit rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                    Sudah Upload
+                </span>
+            @else
+                <span class="inline-flex w-fit rounded-full bg-yellow-50 px-3 py-1 text-xs font-semibold text-yellow-700">
+                    Belum Upload
+                </span>
+            @endif
+        </div>
+
+        <div class="mt-6 grid gap-6 lg:grid-cols-2">
+            <div class="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5">
+                <p class="text-xs font-medium uppercase tracking-wide text-gray-400">
+                    Preview Tanda Tangan Saat Ini
+                </p>
+
+                @if ($employee?->signature_path)
+                    <div class="mt-4 flex min-h-36 items-center justify-center rounded-xl border border-gray-200 bg-white p-4">
+                        <img
+                            src="{{ \Illuminate\Support\Facades\Storage::url($employee->signature_path) }}"
+                            alt="Tanda tangan {{ $employee?->name }}"
+                            class="max-h-28 max-w-full object-contain"
+                        >
+                    </div>
+
+                    <button
+                        type="button"
+                        wire:click="deleteSignature"
+                        wire:confirm="Hapus tanda tangan yang tersimpan?"
+                        wire:loading.attr="disabled"
+                        wire:target="deleteSignature"
+                        class="mt-4 inline-flex items-center rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 shadow-sm hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        <span wire:loading.remove wire:target="deleteSignature">
+                            Hapus Tanda Tangan
+                        </span>
+                        <span wire:loading wire:target="deleteSignature">
+                            Menghapus...
+                        </span>
+                    </button>
+                @else
+                    <div class="mt-4 flex min-h-36 items-center justify-center rounded-xl border border-gray-200 bg-white p-4 text-center">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-700">
+                                Belum ada tanda tangan
+                            </p>
+                            <p class="mt-1 text-xs leading-5 text-gray-500">
+                                Tanda tangan wajib tersedia sebelum Kanit melakukan finalisasi laporan bulanan.
+                            </p>
+                        </div>
+                    </div>
+                @endif
+            </div>
+
+            <form wire:submit.prevent="updateSignature" class="rounded-2xl border border-gray-200 bg-white p-5">
+                <label class="block text-sm font-medium text-gray-700">
+                    Upload Tanda Tangan Baru
+                </label>
+
+                <input
+                    type="file"
+                    wire:model="signature"
+                    accept="image/png,image/jpeg,image/jpg,image/webp"
+                    class="mt-2 block w-full rounded-xl border border-gray-300 text-sm text-gray-700 shadow-sm file:mr-4 file:border-0 file:bg-blue-50 file:px-4 file:py-3 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
+                >
+
+                @error('signature')
+                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+
+                <div wire:loading wire:target="signature" class="mt-3 text-sm text-gray-500">
+                    Memproses preview tanda tangan...
+                </div>
+
+                @if ($signature)
+                    <div class="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                        <p class="text-xs font-medium uppercase tracking-wide text-gray-400">
+                            Preview Upload Baru
+                        </p>
+
+                        <div class="mt-3 flex min-h-28 items-center justify-center rounded-xl bg-white p-3">
+                            <img
+                                src="{{ $signature->temporaryUrl() }}"
+                                alt="Preview tanda tangan baru"
+                                class="max-h-24 max-w-full object-contain"
+                            >
+                        </div>
+                    </div>
+                @endif
+
+                <div class="mt-5 flex items-center gap-3">
+                    <button
+                        type="submit"
+                        wire:loading.attr="disabled"
+                        wire:target="updateSignature,signature"
+                        class="inline-flex items-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        <span wire:loading.remove wire:target="updateSignature">
+                            Simpan Tanda Tangan
+                        </span>
+                        <span wire:loading wire:target="updateSignature">
+                            Menyimpan...
+                        </span>
+                    </button>
+
+                    <span
+                        wire:loading
+                        wire:target="updateSignature"
+                        class="text-sm text-gray-500"
+                    >
+                        Mengupload tanda tangan...
+                    </span>
+                </div>
+
+                <p class="mt-4 text-xs leading-5 text-gray-500">
+                    Disarankan memakai gambar tanda tangan dengan background transparan atau putih agar rapi saat masuk ke export Excel.
+                </p>
+            </form>
+        </div>
+    </div>
+
     <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <h2 class="text-base font-semibold text-gray-900">
             Ubah Password

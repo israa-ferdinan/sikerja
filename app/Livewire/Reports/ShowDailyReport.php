@@ -3,13 +3,18 @@
 namespace App\Livewire\Reports;
 
 use App\Models\DailyReport;
+
 use App\Services\ActivityLogger;
+use App\Services\MonthlyReportApprovalService;
+
 use Illuminate\Support\Facades\Storage;
+
 use Livewire\Component;
 
 class ShowDailyReport extends Component
 {
     public DailyReport $report;
+    public bool $isLocked = false;
 
     public function mount(DailyReport $report)
     {
@@ -30,6 +35,11 @@ class ShowDailyReport extends Component
             'dutyOwnerEmployee',
             'reportedByEmployee',
         ]);
+
+        $this->isLocked = app(MonthlyReportApprovalService::class)->isReportDateLocked(
+            unitId: (int) $this->report->unit_id,
+            reportDate: $this->report->report_date
+        );
     }
 
     public function delete()
@@ -38,6 +48,14 @@ class ShowDailyReport extends Component
 
         if (! $user->employee_id || $this->report->employee_id !== $user->employee_id) {
             abort(403, 'Anda tidak memiliki akses untuk menghapus laporan ini.');
+        }
+
+        if (app(MonthlyReportApprovalService::class)->isReportDateLocked(
+            unitId: (int) $this->report->unit_id,
+            reportDate: $this->report->report_date
+        )) {
+            session()->flash('error', 'Laporan periode ini sudah difinalisasi oleh Kanit dan tidak dapat dihapus.');
+            return;
         }
 
         $this->report->load([

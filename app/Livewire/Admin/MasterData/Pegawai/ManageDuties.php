@@ -40,9 +40,13 @@ class ManageDuties extends Component
 
         $this->employee->duties()->sync($syncData);
 
-        session()->flash('success', 'Tupoksi pegawai berhasil diperbarui.');
-
         $this->employee->load('duties');
+
+        $this->dispatch(
+            'toast',
+            type: 'success',
+            message: 'Tupoksi pegawai berhasil diperbarui.'
+        );
     }
 
     public function render()

@@ -191,7 +191,7 @@
                     </div>
                 @else
                     <x-ui.empty-state
-                        icon="📷"
+                        icon="image"
                         title="Tidak ada foto"
                         message="Pegawai belum mengunggah foto dokumentasi untuk laporan ini."
                     />

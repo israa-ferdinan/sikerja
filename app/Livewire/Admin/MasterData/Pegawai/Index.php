@@ -99,7 +99,7 @@ class Index extends Component
                 newValues: $employee->fresh()->toArray()
             );
 
-            session()->flash('success', 'Pegawai berhasil diperbarui.');
+            $message = 'Pegawai berhasil diperbarui.';
         } else {
             $employee = Employee::create($data);
 
@@ -111,10 +111,12 @@ class Index extends Component
                 newValues: $employee->fresh()->toArray()
             );
 
-            session()->flash('success', 'Pegawai berhasil ditambahkan.');
+            $message = 'Pegawai berhasil ditambahkan.';
         }
 
         $this->closeModal();
+
+        $this->dispatch('toast', type: 'success', message: $message);
     }
 
     public function delete($id)
@@ -133,7 +135,7 @@ class Index extends Component
 
         $employee->delete();
 
-        session()->flash('success', 'Pegawai berhasil dihapus.');
+        $this->dispatch('toast', type: 'success', message: 'Pegawai berhasil dihapus.');
     }
 
     public function closeModal()

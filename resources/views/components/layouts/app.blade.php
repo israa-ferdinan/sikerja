@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}"
-      x-data="{ sidebarOpen: false }">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,26 +9,33 @@
     @livewireStyles
 </head>
 
-<body class="font-sans antialiased bg-gray-100">
-    <div class="min-h-screen">
+<body
+    x-data="{ sidebarOpen: false }"
+    x-bind:class="{ 'overflow-hidden': sidebarOpen }"
+    class="overflow-x-hidden font-sans antialiased bg-slate-100 text-slate-900"
+>
+    <div class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.12),_transparent_32rem),linear-gradient(180deg,_#f8fafc_0%,_#eef2f7_100%)]">
 
         @auth
             @include('layouts.mobile-sidebar')
             @include('layouts.sidebar')
         @endauth
 
-        <div class="lg:pl-64">
+        <div class="min-w-0 lg:pl-64">
             @auth
                 @include('layouts.topbar')
             @endauth
 
-            <main class="p-4 sm:p-6 lg:p-8">
+            <main class="min-w-0 overflow-x-hidden p-4 sm:p-6 lg:p-8">
                 {{ $slot }}
             </main>
         </div>
 
-    </div>
+        <x-toast />
+        <x-ui.confirm-modal />
 
+        <div id="layout-test-marker" style="display:none">LAYOUT AKTIF</div>
+    </div>
     @livewireScripts
 </body>
 </html>
