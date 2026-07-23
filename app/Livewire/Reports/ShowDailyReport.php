@@ -34,6 +34,7 @@ class ShowDailyReport extends Component
             'delegation',
             'dutyOwnerEmployee',
             'reportedByEmployee',
+            'operationalTicket',
         ]);
 
         $this->isLocked = app(MonthlyReportApprovalService::class)->isReportDateLocked(
@@ -58,6 +59,15 @@ class ShowDailyReport extends Component
             return;
         }
 
+        if ($this->report->operational_ticket_id) {
+            session()->flash(
+                'error',
+                'Laporan yang berasal dari Tiket Operasional tidak dapat dihapus.'
+            );
+
+            return;
+        }
+
         $this->report->load([
             'photos',
             'duty.classification',
@@ -66,6 +76,7 @@ class ShowDailyReport extends Component
             'delegation',
             'dutyOwnerEmployee',
             'reportedByEmployee',
+            'operationalTicket'
         ]);
 
         $oldValues = $this->report->toArray();

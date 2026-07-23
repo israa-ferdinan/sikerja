@@ -59,7 +59,7 @@
 
                 <div
                     wire:loading.flex
-                    wire:target="month,year,unit_id"
+                    wire:target="month,year,unit_id,export_mode,employee_id"
                     class="items-center gap-2 rounded-full border border-cyan-100 bg-cyan-50 px-4 py-2 text-xs font-semibold text-cyan-700"
                 >
                     <span class="h-3 w-3 animate-spin rounded-full border-2 border-cyan-600 border-t-transparent"></span>
@@ -67,119 +67,282 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
-                <div class="xl:col-span-3">
-                    <label class="mb-1.5 block text-sm font-semibold text-slate-700">
-                        Bulan
-                    </label>
+            <div class="space-y-4">
+                {{-- Row 1: Period & Unit --}}
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
+                    <div class="xl:col-span-3">
+                        <label class="mb-1.5 block text-sm font-semibold text-slate-700">
+                            Bulan
+                        </label>
 
-                    <select
-                        wire:model.live="month"
-                        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
-                    >
-                        <option value="1">Januari</option>
-                        <option value="2">Februari</option>
-                        <option value="3">Maret</option>
-                        <option value="4">April</option>
-                        <option value="5">Mei</option>
-                        <option value="6">Juni</option>
-                        <option value="7">Juli</option>
-                        <option value="8">Agustus</option>
-                        <option value="9">September</option>
-                        <option value="10">Oktober</option>
-                        <option value="11">November</option>
-                        <option value="12">Desember</option>
-                    </select>
-
-                    @error('month')
-                        <p class="mt-1.5 text-sm text-rose-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div class="xl:col-span-3">
-                    <label class="mb-1.5 block text-sm font-semibold text-slate-700">
-                        Tahun
-                    </label>
-
-                    <select
-                        wire:model.live="year"
-                        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
-                    >
-                        @for ($y = now()->year - 2; $y <= now()->year + 1; $y++)
-                            <option value="{{ $y }}">{{ $y }}</option>
-                        @endfor
-                    </select>
-
-                    @error('year')
-                        <p class="mt-1.5 text-sm text-rose-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div class="xl:col-span-4">
-                    <label class="mb-1.5 block text-sm font-semibold text-slate-700">
-                        Unit
-                    </label>
-
-                    @if (auth()->user()->role?->name === 'admin')
                         <select
-                            wire:model.live="unit_id"
+                            wire:model.live="month"
                             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
                         >
-                            <option value="">Semua Unit</option>
+                            <option value="1">Januari</option>
+                            <option value="2">Februari</option>
+                            <option value="3">Maret</option>
+                            <option value="4">April</option>
+                            <option value="5">Mei</option>
+                            <option value="6">Juni</option>
+                            <option value="7">Juli</option>
+                            <option value="8">Agustus</option>
+                            <option value="9">September</option>
+                            <option value="10">Oktober</option>
+                            <option value="11">November</option>
+                            <option value="12">Desember</option>
+                        </select>
 
-                            @foreach ($units as $unit)
-                                <option value="{{ $unit->id }}">
-                                    {{ $unit->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    @else
+                        @error('month')
+                            <p class="mt-1.5 text-sm text-rose-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="xl:col-span-3">
+                        <label class="mb-1.5 block text-sm font-semibold text-slate-700">
+                            Tahun
+                        </label>
+
                         <select
-                            wire:model="unit_id"
-                            disabled
-                            class="w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-100 px-3 py-2.5 text-sm text-slate-500 shadow-sm"
+                            wire:model.live="year"
+                            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
                         >
-                            @foreach ($units as $unit)
-                                <option value="{{ $unit->id }}">
-                                    {{ $unit->name }}
-                                </option>
-                            @endforeach
+                            @for ($y = now()->year - 2; $y <= now()->year + 1; $y++)
+                                <option value="{{ $y }}">{{ $y }}</option>
+                            @endfor
                         </select>
+
+                        @error('year')
+                            <p class="mt-1.5 text-sm text-rose-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="md:col-span-2 xl:col-span-6">
+                        <label class="mb-1.5 block text-sm font-semibold text-slate-700">
+                            Unit
+                        </label>
+
+                        @if (auth()->user()->role?->name === 'admin')
+                            <select
+                                wire:model.live="unit_id"
+                                class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                            >
+                                <option value="">Semua Unit</option>
+
+                                @foreach ($units as $unit)
+                                    <option value="{{ $unit->id }}">
+                                        {{ $unit->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        @else
+                            <select
+                                wire:model="unit_id"
+                                disabled
+                                class="w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-100 px-3 py-2.5 text-sm text-slate-500 shadow-sm"
+                            >
+                                @foreach ($units as $unit)
+                                    <option value="{{ $unit->id }}">
+                                        {{ $unit->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        @endif
+
+                        @error('unit_id')
+                            <p class="mt-1.5 text-sm text-rose-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+                {{-- Row 2: Export Mode --}}
+                <div class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+                    <div class="xl:col-span-3">
+                        <label class="mb-1.5 block text-sm font-semibold text-slate-700">
+                            Jenis Export
+                        </label>
+
+                        <select
+                            wire:model.live="export_mode"
+                            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                        >
+                            <option value="unit">Rekap Unit</option>
+                            <option value="employee">Per Pegawai</option>
+                        </select>
+
+                        @error('export_mode')
+                            <p class="mt-1.5 text-sm text-rose-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    @if ($export_mode === 'employee')
+                        <div class="xl:col-span-6">
+                            <label class="mb-1.5 block text-sm font-semibold text-slate-700">
+                                Pegawai
+                            </label>
+
+                            <select
+                                wire:model.live="employee_id"
+                                @disabled(! $unit_id)
+                                class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-500"
+                            >
+                                <option value="">
+                                    {{ $unit_id ? 'Pilih pegawai' : 'Pilih unit terlebih dahulu' }}
+                                </option>
+
+                                @foreach ($this->employeeOptions as $employee)
+                                    <option value="{{ $employee->id }}">
+                                        {{ $employee->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+
+                            @error('employee_id')
+                                <p class="mt-1.5 text-sm text-rose-600">{{ $message }}</p>
+                            @enderror
+
+                            @if (! $unit_id)
+                                <p class="mt-1.5 text-xs leading-5 text-amber-700">
+                                    Mode per pegawai wajib memilih unit agar tanda tangan Kanit dan pegawai sesuai dengan unit laporan.
+                                </p>
+                            @endif
+                        </div>
+                    @else
+                        <div class="xl:col-span-6">
+                            <label class="mb-1.5 block text-sm font-semibold text-slate-700">
+                                Format Tanda Tangan
+                            </label>
+
+                            <div class="flex min-h-[42px] items-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                                Rekap unit memakai tanda tangan Kanit di tengah bawah laporan.
+                            </div>
+                        </div>
                     @endif
 
-                    @error('unit_id')
-                        <p class="mt-1.5 text-sm text-rose-600">{{ $message }}</p>
-                    @enderror
+                    <div class="flex items-end xl:col-span-3">
+                        <button
+                            type="submit"
+                            @disabled($this->summary['total_reports'] === 0)
+                            wire:loading.attr="disabled"
+                            wire:target="export"
+                            class="inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm transition focus:outline-none focus:ring-4
+                            {{ $this->summary['total_reports'] === 0
+                                ? 'cursor-not-allowed bg-slate-200 text-slate-500 focus:ring-slate-100'
+                                : 'bg-slate-950 text-white hover:bg-slate-800 focus:ring-slate-200' }}"
+                        >
+                            <x-icon wire:loading.remove wire:target="export" name="download" class="h-4 w-4" />
+
+                            <span wire:loading.remove wire:target="export">
+                                Export Excel
+                            </span>
+
+                            <span wire:loading.flex wire:target="export" class="items-center gap-2">
+                                <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                                Export...
+                            </span>
+                        </button>
+                    </div>
                 </div>
 
-                <div class="flex items-end xl:col-span-2">
-                    <button
-                        type="submit"
-                        @disabled($this->summary['total_reports'] === 0)
-                        wire:loading.attr="disabled"
-                        wire:target="export"
-                        class="inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm transition focus:outline-none focus:ring-4
-                        {{ $this->summary['total_reports'] === 0
-                            ? 'cursor-not-allowed bg-slate-200 text-slate-500 focus:ring-slate-100'
-                            : 'bg-slate-950 text-white hover:bg-slate-800 focus:ring-slate-200' }}"
-                    >
-                        <x-icon wire:loading.remove wire:target="export" name="download" class="h-4 w-4" />
+                {{-- Export Info --}}
+                <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                    <div class="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-800">
+                        Link foto bukti kegiatan pada file Excel menggunakan URL terlindungi. Pengguna tetap harus login dan hanya dapat membuka foto sesuai hak aksesnya.
+                    </div>
 
-                        <span wire:loading.remove wire:target="export">
-                            Export Excel
-                        </span>
-
-                        <span wire:loading.flex wire:target="export" class="items-center gap-2">
-                            <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-                            Export...
-                        </span>
-                    </button>
+                    @if ($export_mode === 'employee')
+                        <div class="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-800">
+                            Mode Per Pegawai menghasilkan laporan satu pegawai dengan tanda tangan Kanit di kiri dan tanda tangan pegawai di kanan.
+                        </div>
+                    @else
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700">
+                            Mode Rekap Unit menghasilkan laporan semua pegawai dalam satu unit dengan tanda tangan Kanit di tengah.
+                        </div>
+                    @endif
                 </div>
             </div>
 
-            <div class="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-800">
-                Link foto bukti kegiatan pada file Excel menggunakan URL terlindungi. Pengguna tetap harus login dan hanya dapat membuka foto sesuai hak aksesnya.
-            </div>
+            {{-- Signature Completeness Info --}}
+            @if (($this->summary['total_employees'] ?? 0) > 0)
+                <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div class="flex items-start gap-3">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl
+                                {{ ($this->summary['total_employees_without_signature'] ?? 0) > 0
+                                    ? 'bg-amber-50 text-amber-700'
+                                    : 'bg-emerald-50 text-emerald-700' }}"
+                            >
+                                <x-icon
+                                    name="{{ ($this->summary['total_employees_without_signature'] ?? 0) > 0 ? 'alert-triangle' : 'badge-check' }}"
+                                    class="h-5 w-5"
+                                />
+                            </div>
+
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-900">
+                                    Status Tanda Tangan Pegawai
+                                </h3>
+
+                                <p class="mt-1 text-sm leading-6 text-slate-600">
+                                    {{ number_format($this->summary['total_employees_with_signature'] ?? 0) }}
+                                    dari
+                                    {{ number_format($this->summary['total_employees'] ?? 0) }}
+                                    pegawai pelapor sudah memiliki tanda tangan digital.
+                                </p>
+
+                                @if (($this->summary['total_employees_without_signature'] ?? 0) > 0)
+                                    <p class="mt-1 text-xs leading-5 text-amber-700">
+                                        Catatan: export dan finalisasi tetap bisa dilakukan. Pegawai yang belum memiliki tanda tangan akan ditampilkan sebagai
+                                        <span class="font-semibold">Belum ada tanda tangan pegawai</span>
+                                        pada laporan per pegawai.
+                                    </p>
+                                @else
+                                    <p class="mt-1 text-xs leading-5 text-emerald-700">
+                                        Semua pegawai pelapor pada filter aktif sudah memiliki tanda tangan digital.
+                                    </p>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="grid min-w-full grid-cols-2 gap-2 sm:min-w-64">
+                            <div class="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2">
+                                <p class="text-xs font-semibold text-emerald-700">
+                                    Sudah TTD
+                                </p>
+                                <p class="mt-1 text-2xl font-bold text-emerald-800">
+                                    {{ number_format($this->summary['total_employees_with_signature'] ?? 0) }}
+                                </p>
+                            </div>
+
+                            <div class="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2">
+                                <p class="text-xs font-semibold text-amber-700">
+                                    Belum TTD
+                                </p>
+                                <p class="mt-1 text-2xl font-bold text-amber-800">
+                                    {{ number_format($this->summary['total_employees_without_signature'] ?? 0) }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (($this->summary['total_employees_without_signature'] ?? 0) > 0)
+                        <div class="mt-4 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3">
+                            <p class="text-xs font-bold uppercase tracking-wide text-amber-700">
+                                Pegawai belum upload tanda tangan
+                            </p>
+
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                @foreach (($this->summary['employees_without_signature'] ?? collect()) as $employee)
+                                    <span class="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-white px-3 py-1 text-xs font-semibold text-amber-800">
+                                        <x-icon name="user" class="h-3.5 w-3.5" />
+                                        {{ $employee['employee_name'] }}
+                                    </span>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            @endif
 
             @if (session('success') || session('error') || session('warning'))
                 <div class="mt-4 space-y-2">
@@ -438,6 +601,9 @@
                             <th class="px-5 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-500">
                                 Total Foto
                             </th>
+                            <th class="px-5 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-500">
+                                TTD
+                            </th>
                         </tr>
                     </thead>
 
@@ -473,10 +639,22 @@
                                         {{ number_format($employee['total_photos']) }}
                                     </span>
                                 </td>
+
+                                <td class="px-5 py-4 text-center">
+                                    @if ($employee['has_signature'] ?? false)
+                                        <span class="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-100">
+                                            Ada
+                                        </span>
+                                    @else
+                                        <span class="inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 ring-1 ring-amber-100">
+                                            Belum Ada
+                                        </span>
+                                    @endif
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-5 py-10 text-center">
+                                <td colspan="7" class="px-5 py-10 text-center">
                                     <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
                                         <x-icon name="file-text" class="h-7 w-7" />
                                     </div>

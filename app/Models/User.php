@@ -67,6 +67,21 @@ class User extends Authenticatable
         return $this->hasRole('pegawai');
     }
 
+    public function isGkm(): bool
+    {
+        return $this->hasRole('gkm');
+    }
+
+    public function canAccessEmployeeArea(): bool
+    {
+        return $this->hasRole(['pegawai', 'gkm']);
+    }
+
+    public function canManageDocumentation(): bool
+    {
+        return $this->hasRole(['admin', 'kanit', 'gkm']);
+    }
+
     public function dailyReports()
     {
         return $this->hasMany(DailyReport::class);
@@ -76,4 +91,5 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Employee::class, 'employee_id');
     }
+
 }

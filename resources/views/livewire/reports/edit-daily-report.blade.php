@@ -45,6 +45,34 @@
             </div>
         @endif
 
+        @if($isTicketReport && $report->operationalTicket)
+            <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm font-bold text-amber-900">
+                            Laporan dari Tiket Operasional
+                        </p>
+
+                        <p class="mt-1 text-sm leading-6 text-amber-800">
+                            Laporan ini terhubung dengan tiket
+                            <span class="font-bold">
+                                {{ $report->operationalTicket->ticket_code }}
+                            </span>.
+                            Tanggal laporan dan tupoksi dikunci agar riwayat tiket tetap konsisten.
+                        </p>
+                    </div>
+
+                    <a
+                        href="{{ route('operations.tickets.show', $report->operationalTicket) }}"
+                        class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-amber-700"
+                    >
+                        <x-icon name="ticket" class="h-4 w-4" />
+                        Lihat Tiket
+                    </a>
+                </div>
+            </div>
+        @endif
+
         <form wire:submit.prevent="update" class="space-y-6">
 
             {{-- Informasi Laporan --}}
@@ -67,8 +95,15 @@
                         <input
                             type="date"
                             wire:model="report_date"
-                            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                            @disabled($isTicketReport || $isLocked)
+                            class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
                         >
+
+                        @if($isTicketReport)
+                            <p class="mt-1.5 text-xs text-amber-700">
+                                Tanggal dikunci karena laporan berasal dari Tiket Operasional.
+                            </p>
+                        @endif
 
                         @error('report_date')
                             <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
@@ -82,8 +117,16 @@
 
                         <select
                             wire:model.live="duty_id"
-                            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                            @disabled($isTicketReport || $isLocked)
+                            class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
                         >
+
+                        @if($isTicketReport)
+                            <p class="mt-1.5 text-xs text-amber-700">
+                                Tupoksi ditentukan otomatis berdasarkan kategori tiket dan tidak dapat diubah.
+                            </p>
+                        @endif
+                        
                             <option value="">-- Pilih Tupoksi --</option>
 
                             @foreach ($duties as $duty)

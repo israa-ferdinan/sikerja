@@ -194,6 +194,8 @@ class Index extends Component
             'master_server' => 'Master Server',
             'master_application' => 'Master Aplikasi',
             'master_report_template' => 'Template Laporan',
+
+            'profile' => 'Profil Pengguna',
         ];
     }
 
@@ -208,6 +210,10 @@ class Index extends Component
             'deactivate' => 'Nonaktifkan',
             'export' => 'Export',
             'reset_password' => 'Reset Password',
+
+            'upload_signature' => 'Upload Tanda Tangan',
+            'replace_signature' => 'Ganti Tanda Tangan',
+            'delete_signature' => 'Lepas Tanda Tangan',
         ];
     }
 

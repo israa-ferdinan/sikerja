@@ -20,10 +20,14 @@ class ReportDetail extends Component
 
         $report->load([
             'employee.unit',
-            'duty',
+            'duty.classification',
             'server',
             'application',
             'photos',
+            'delegation',
+            'dutyOwnerEmployee',
+            'reportedByEmployee',
+            'operationalTicket',
         ]);
 
         abort_if(

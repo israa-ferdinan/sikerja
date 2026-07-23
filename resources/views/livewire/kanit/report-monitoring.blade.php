@@ -129,7 +129,7 @@
                         <input
                             type="text"
                             wire:model.live.debounce.500ms="search"
-                            placeholder="Cari judul, deskripsi, pegawai, tupoksi, server, atau aplikasi..."
+                            placeholder="Cari judul, kode tiket, pegawai, tupoksi, server, atau aplikasi..."
                             class="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-700 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
                         >
                     </div>
@@ -479,24 +479,43 @@
                         >
                             @foreach($reports as $report)
                                 <tr class="transition hover:bg-cyan-50/30">
+                                    {{-- Tanggal --}}
                                     <td class="whitespace-nowrap px-5 py-4 align-top">
                                         <div class="text-sm font-semibold text-slate-800">
                                             {{ optional($report->report_date)->format('d/m/Y') }}
                                         </div>
                                     </td>
 
+                                    {{-- Pegawai --}}
                                     <td class="px-5 py-4 align-top">
                                         <div class="text-sm font-semibold text-slate-900">
-                                            {{ $report->employee->name ?? '-' }}
+                                            {{ $report->employee?->name ?? '-' }}
                                         </div>
+
                                         <div class="mt-1 text-xs text-slate-500">
-                                            {{ $report->employee?->jobPosition?->name ?? $report->employee?->position ?? '-' }}
+                                            {{ $report->employee?->jobPosition?->name
+                                                ?? $report->employee?->position
+                                                ?? '-' }}
                                         </div>
                                     </td>
 
+                                    {{-- Laporan --}}
                                     <td class="px-5 py-4 align-top">
                                         <div class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-                                            <div class="text-sm font-bold text-slate-900">
+                                            @if($report->operationalTicket)
+                                                <div class="mb-2 flex flex-wrap items-center gap-2">
+                                                    <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700 ring-1 ring-amber-200">
+                                                        <x-icon name="ticket" class="h-3.5 w-3.5" />
+                                                        {{ $report->operationalTicket->ticket_code }}
+                                                    </span>
+
+                                                    <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+                                                        {{ $report->operationalTicket->status_label }}
+                                                    </span>
+                                                </div>
+                                            @endif
+
+                                            <div class="text-sm font-bold leading-6 text-slate-900">
                                                 {{ $report->title }}
                                             </div>
 
@@ -506,13 +525,16 @@
 
                                             @if(!empty($report->notes))
                                                 <div class="mt-2 line-clamp-1 text-xs leading-5 text-slate-500">
-                                                    <span class="font-semibold text-slate-600">Catatan:</span>
+                                                    <span class="font-semibold text-slate-600">
+                                                        Catatan:
+                                                    </span>
                                                     {{ $report->notes }}
                                                 </div>
                                             @endif
                                         </div>
                                     </td>
 
+                                    {{-- Tupoksi --}}
                                     <td class="px-5 py-4 align-top">
                                         <div class="space-y-2">
                                             @if($report->duty)
@@ -520,11 +542,13 @@
                                                     {{ $report->duty->name }}
                                                 </div>
                                             @else
-                                                <span class="text-sm text-slate-400">-</span>
+                                                <span class="text-sm text-slate-400">
+                                                    -
+                                                </span>
                                             @endif
 
                                             <div class="flex flex-wrap items-center gap-2">
-                                                @if ($report->is_delegated)
+                                                @if($report->is_delegated)
                                                     <span class="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700 ring-1 ring-indigo-100">
                                                         Delegasi
                                                     </span>
@@ -541,7 +565,7 @@
                                                 @endif
                                             </div>
 
-                                            @if ($report->is_delegated)
+                                            @if($report->is_delegated)
                                                 <div class="rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs leading-5 text-indigo-800">
                                                     <div>
                                                         Pemilik:
@@ -549,10 +573,13 @@
                                                             {{ $report->dutyOwnerEmployee?->name ?? '-' }}
                                                         </span>
                                                     </div>
+
                                                     <div>
                                                         Pelapor:
                                                         <span class="font-semibold">
-                                                            {{ $report->reportedByEmployee?->name ?? $report->employee?->name ?? '-' }}
+                                                            {{ $report->reportedByEmployee?->name
+                                                                ?? $report->employee?->name
+                                                                ?? '-' }}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -560,38 +587,40 @@
 
                                             @if($report->duty)
                                                 <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
-                                                    <div>
-                                                        <span class="font-semibold text-slate-700">
-                                                            Jenis Objek:
-                                                        </span>
-                                                        {{ $report->duty?->object_type_label ?? '-' }}
-                                                    </div>
+                                                    <span class="font-semibold text-slate-700">
+                                                        Jenis Objek:
+                                                    </span>
+
+                                                    {{ $report->duty?->object_type_label ?? '-' }}
                                                 </div>
                                             @endif
                                         </div>
                                     </td>
 
+                                    {{-- Objek laporan --}}
                                     <td class="px-5 py-4 align-top">
-                                        @if ($report->server || $report->application)
+                                        @if($report->server || $report->application)
                                             <div class="space-y-2">
-                                                @if ($report->server)
+                                                @if($report->server)
                                                     <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                                                         <div class="text-xs font-bold uppercase tracking-wide text-slate-500">
                                                             Server
                                                         </div>
+
                                                         <div class="mt-1 text-sm font-semibold text-slate-800">
-                                                            {{ $report->server?->name }}
+                                                            {{ $report->server->name }}
                                                         </div>
                                                     </div>
                                                 @endif
 
-                                                @if ($report->application)
+                                                @if($report->application)
                                                     <div class="rounded-xl border border-cyan-100 bg-cyan-50 px-3 py-2">
                                                         <div class="text-xs font-bold uppercase tracking-wide text-cyan-700">
                                                             Aplikasi
                                                         </div>
+
                                                         <div class="mt-1 text-sm font-semibold text-cyan-900">
-                                                            {{ $report->application?->name }}
+                                                            {{ $report->application->name }}
                                                         </div>
                                                     </div>
                                                 @endif
@@ -603,12 +632,19 @@
                                         @endif
                                     </td>
 
+                                    {{-- Foto --}}
                                     <td class="px-5 py-4 text-center align-top">
-                                        <span class="inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-bold ring-1 {{ $report->photos->count() > 0 ? 'bg-emerald-50 text-emerald-700 ring-emerald-100' : 'bg-slate-100 text-slate-500 ring-slate-200' }}">
+                                        <span
+                                            class="inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-bold ring-1
+                                                {{ $report->photos->count() > 0
+                                                    ? 'bg-emerald-50 text-emerald-700 ring-emerald-100'
+                                                    : 'bg-slate-100 text-slate-500 ring-slate-200' }}"
+                                        >
                                             {{ $report->photos->count() }} foto
                                         </span>
                                     </td>
 
+                                    {{-- Aksi --}}
                                     <td class="whitespace-nowrap px-5 py-4 text-right align-top text-sm">
                                         <a
                                             href="{{ route('kanit.reports.detail', $report) }}"
@@ -630,36 +666,36 @@
                     </div>
                 @endif
             </div>
-        @else
-            <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
-                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
-                    <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
-                        <path d="M14 2v6h6" />
-                        <path d="M8 13h8" />
-                        <path d="M8 17h5" />
-                    </svg>
+            @else
+                <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
+                    <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+                        <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+                            <path d="M14 2v6h6" />
+                            <path d="M8 13h8" />
+                            <path d="M8 17h5" />
+                        </svg>
+                    </div>
+
+                    <h3 class="mt-4 text-base font-bold text-slate-900">
+                        Belum ada laporan
+                    </h3>
+
+                    <p class="mt-1 text-sm leading-6 text-slate-500">
+                        Tidak ada laporan pada filter bulan, tahun, atau pegawai yang dipilih.
+                    </p>
+
+                    <div class="mt-5">
+                        <button
+                            type="button"
+                            wire:click="resetFilter"
+                            class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                        >
+                            <x-icon name="rotate-ccw" class="h-4 w-4" />
+                            Reset Filter
+                        </button>
+                    </div>
                 </div>
-
-                <h3 class="mt-4 text-base font-bold text-slate-900">
-                    Belum ada laporan
-                </h3>
-
-                <p class="mt-1 text-sm leading-6 text-slate-500">
-                    Tidak ada laporan pada filter bulan, tahun, atau pegawai yang dipilih.
-                </p>
-
-                <div class="mt-5">
-                    <button
-                        type="button"
-                        wire:click="resetFilter"
-                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
-                    >
-                        <x-icon name="rotate-ccw" class="h-4 w-4" />
-                        Reset Filter
-                    </button>
-                </div>
-            </div>
-        @endif
+            @endif
     </div>
 </div>

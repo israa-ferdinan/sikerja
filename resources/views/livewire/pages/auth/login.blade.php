@@ -62,18 +62,18 @@ new class extends Component
                 </div>
 
                 <div class="relative z-10 flex h-full flex-col justify-between">
-                    <div>
-                        <div class="mb-8 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6M8 4h8a2 2 0 0 1 2 2v14l-3-2-3 2-3-2-3 2V6a2 2 0 0 1 2-2Z" />
-                            </svg>
-                        </div>
+                    <div class="text-center">
+                        <img
+                            src="{{ asset('images/iteam.png') }}"
+                            alt="Logo SIPALING KERJA"
+                            class="mx-auto mb-6 h-28 w-auto max-w-full object-contain drop-shadow-lg"
+                        >
 
-                        <h1 class="text-3xl font-bold leading-tight">
-                            SIPALING KERJA — Sistem Informasi Pelaporan Aktivitas Lingkup Kerja 
+                        <h1 class="mx-auto max-w-lg text-3xl font-bold leading-tight">
+                            SIPALING KERJA — Sistem Informasi Pelaporan Aktivitas Lingkup Kerja
                         </h1>
 
-                        <p class="mt-4 max-w-md text-sm leading-6 text-blue-100">
+                        <p class="mx-auto mt-4 max-w-md text-sm leading-6 text-blue-100">
                             Sistem pencatatan, monitoring, dan rekap laporan kerja harian pegawai secara lebih rapi, cepat, dan terstruktur.
                         </p>
                     </div>

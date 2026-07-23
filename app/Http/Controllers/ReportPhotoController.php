@@ -32,7 +32,7 @@ class ReportPhotoController extends Controller
         $canAccess = match ($roleName) {
             'admin' => true,
 
-            'kanit' => $employee
+            'kanit', 'gkm' => $employee
                 && $employee->unit_id
                 && (int) $report->unit_id === (int) $employee->unit_id,
 

@@ -171,10 +171,16 @@
                                 <select wire:model.live="role_id" class="w-full rounded-2xl border-slate-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                     <option value="">Pilih Role</option>
                                     @foreach ($roles as $role)
-                                        <option value="{{ $role->id }}">{{ ucfirst($role->name) }}</option>
+                                        <option value="{{ $role->id }}">
+                                            {{ $role->name === 'gkm' ? 'GKM' : ucfirst($role->name) }}
+                                        </option>
                                     @endforeach
                                 </select>
                                 @error('role_id') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+
+                                <p class="mt-1 text-xs text-slate-500">
+                                    Role GKM tetap berbasis pegawai dan hanya mendapat akses laporan pribadi + pondasi dokumentasi.
+                                </p>
                             </div>
                         </div>
 

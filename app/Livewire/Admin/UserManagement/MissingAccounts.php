@@ -104,6 +104,15 @@ class MissingAccounts extends Component
             ->get();
 
         $roles = Role::query()
+            ->orderByRaw("
+                CASE name
+                    WHEN 'admin' THEN 1
+                    WHEN 'kanit' THEN 2
+                    WHEN 'gkm' THEN 3
+                    WHEN 'pegawai' THEN 4
+                    ELSE 99
+                END
+            ")
             ->orderBy('name')
             ->get();
 
@@ -220,6 +229,18 @@ class MissingAccounts extends Component
             'password.min' => 'Password minimal 8 karakter.',
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
         ]);
+
+        $role = Role::query()->find($validated['role_id']);
+
+        if (! $role) {
+            $this->addError('role_id', 'Role aplikasi tidak valid.');
+            return;
+        }
+
+        if ($role->name === 'gkm' && empty($employee->id)) {
+            $this->addError('role_id', 'Role GKM wajib terhubung dengan data pegawai.');
+            return;
+        }
 
         $user = User::create([
             'name' => $validated['user_name'],

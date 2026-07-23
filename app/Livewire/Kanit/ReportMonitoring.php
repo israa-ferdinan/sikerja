@@ -158,6 +158,7 @@ class ReportMonitoring extends Component
                 'delegation',
                 'dutyOwnerEmployee',
                 'reportedByEmployee',
+                'operationalTicket',
             ])
             ->where('unit_id', $unitId)
             ->whereMonth('report_date', (int) $this->month)
@@ -212,6 +213,11 @@ class ReportMonitoring extends Component
                         })
                         ->orWhereHas('application', function ($applicationQuery) use ($keyword) {
                             $applicationQuery->where('name', 'like', $keyword);
+                        })
+                        ->orWhereHas('operationalTicket', function ($ticketQuery) use ($keyword) {
+                            $ticketQuery
+                                ->where('ticket_code', 'like', $keyword)
+                                ->orWhere('title', 'like', $keyword);
                         });
                 });
             })

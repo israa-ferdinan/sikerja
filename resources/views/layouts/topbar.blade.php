@@ -32,7 +32,138 @@
                 ->implode('');
 
             $initials = $initials ?: 'U';
+
+            $unreadNotificationCount = 0;
+            $latestNotifications = collect();
+
+            if ($user && class_exists(\App\Models\AppNotification::class)) {
+                $unreadNotificationCount = \App\Models\AppNotification::unreadCountFor($user);
+
+                $latestNotifications = \App\Models\AppNotification::query()
+                    ->forUser($user)
+                    ->latest()
+                    ->limit(5)
+                    ->get();
+            }
         @endphp
+
+        <div class="relative shrink-0" x-data="{ notificationOpen: false }">
+            <button
+                type="button"
+                @click="notificationOpen = !notificationOpen"
+                class="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+                title="Notifikasi"
+            >
+                <x-icon name="bell" class="h-5 w-5" />
+
+                @if($unreadNotificationCount > 0)
+                    <span class="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-[10px] font-bold leading-none text-white ring-2 ring-white">
+                        {{ $unreadNotificationCount > 99 ? '99+' : $unreadNotificationCount }}
+                    </span>
+                @endif
+            </button>
+
+            <div
+                x-show="notificationOpen"
+                x-transition.origin.top.right
+                @click.outside="notificationOpen = false"
+                class="fixed left-4 right-4 top-20 z-50 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl shadow-slate-900/10 sm:left-auto sm:right-24 sm:w-[28rem] lg:right-28"
+                style="display: none;"
+            >
+                <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-sm font-bold text-slate-900">
+                            Notifikasi
+                        </h3>
+
+                        @if($unreadNotificationCount > 0)
+                            <span class="inline-flex items-center gap-1 rounded-full bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white">
+                                <span class="h-1.5 w-1.5 rounded-full bg-white"></span>
+                                {{ $unreadNotificationCount > 99 ? '99+' : $unreadNotificationCount }} Baru
+                            </span>
+                        @endif
+                    </div>
+
+                    @if($unreadNotificationCount > 0)
+                        <form method="POST" action="{{ route('notifications.read-all') }}">
+                            @csrf
+                            @method('PATCH')
+
+                            <button
+                                type="submit"
+                                class="text-xs font-semibold text-blue-700 hover:text-blue-900"
+                            >
+                                Tandai sudah dibaca
+                            </button>
+                        </form>
+                    @endif
+                </div>
+
+                <div class="max-h-[28rem] overflow-y-auto">
+                    @forelse($latestNotifications as $notification)
+                        <a
+                            href="{{ route('notifications.open', $notification) }}"
+                            class="block border-b border-slate-100 px-4 py-4 transition hover:bg-slate-50 {{ $notification->isUnread() ? 'bg-blue-50/70' : 'bg-white' }}"
+                        >
+                            <div class="flex gap-3">
+                                <div class="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white">
+                                    <x-icon name="bell" class="h-5 w-5" />
+
+                                    @if($notification->isUnread())
+                                        <span class="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-orange-500"></span>
+                                    @endif
+                                </div>
+
+                                <div class="min-w-0 flex-1">
+                                    @if($notification->module)
+                                        <p class="truncate text-xs font-semibold text-slate-500">
+                                            {{ $notification->module }}
+                                        </p>
+                                    @endif
+
+                                    <p class="mt-0.5 text-sm font-semibold text-slate-900">
+                                        {{ $notification->title }}
+                                    </p>
+
+                                    @if($notification->message)
+                                        <p class="mt-1 line-clamp-2 text-sm leading-5 text-slate-600">
+                                            {{ $notification->short_message }}
+                                        </p>
+                                    @endif
+
+                                    <p class="mt-2 text-xs text-slate-500">
+                                        {{ $notification->created_at?->format('d M Y H:i') }}
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+                    @empty
+                        <div class="px-4 py-10 text-center">
+                            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                                <x-icon name="bell" class="h-6 w-6" />
+                            </div>
+
+                            <p class="mt-3 text-sm font-semibold text-slate-900">
+                                Belum ada notifikasi
+                            </p>
+
+                            <p class="mt-1 text-sm text-slate-500">
+                                Notifikasi terbaru akan muncul di sini.
+                            </p>
+                        </div>
+                    @endforelse
+                </div>
+
+                <div class="border-t border-slate-100 bg-slate-50 px-4 py-3 text-center">
+                    <a
+                        href="{{ route('notifications.index') }}"
+                        class="text-sm font-semibold text-slate-700 hover:text-slate-900"
+                    >
+                        Lihat Semua Notifikasi
+                    </a>
+                </div>
+            </div>
+        </div>
 
         <div class="relative shrink-0" x-data="{ userMenuOpen: false }">
             <button

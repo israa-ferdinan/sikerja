@@ -84,9 +84,9 @@ class Index extends Component
         $this->filterYear = now()->year;
         $this->target_year = now()->year;
 
-        if ($this->isKanit()) {
-            $this->unit_id = $this->kanitUnitId();
-            $this->filterUnitId = $this->kanitUnitId();
+        if ($this->isUnitManager()) {
+            $this->unit_id = $this->unitManagerUnitId();
+            $this->filterUnitId = $this->unitManagerUnitId();
         }
     }
 
@@ -403,9 +403,11 @@ class Index extends Component
         $this->target_unit = 'kali';
         $this->achievement_method = 'auto_report';
 
-        if ($this->isKanit()) {
-            $this->unit_id = $this->kanitUnitId();
+        if ($this->isUnitManager()) {
+            $this->unit_id = $this->unitManagerUnitId();
         }
+
+        $this->dispatch('scroll-to-target-form');
     }
 
     public function edit(int $id): void
@@ -444,6 +446,11 @@ class Index extends Component
 
         $this->showForm = true;
         $this->isEdit = true;
+
+        $this->showForm = true;
+        $this->isEdit = true;
+
+        $this->dispatch('scroll-to-target-form');
     }
 
     public function openDetail(int $id): void
@@ -587,11 +594,11 @@ class Index extends Component
 
     public function save(): void
     {
-        if ($this->isKanit()) {
-            $this->unit_id = $this->kanitUnitId();
+        if ($this->isUnitManager()) {
+            $this->unit_id = $this->unitManagerUnitId();
         }
 
-        if ($this->isKanit() && ! $this->kanitUnitId()) {
+        if ($this->isUnitManager() && ! $this->unitManagerUnitId()) {
             $this->addError('unit_id', 'Akun Kanit belum terhubung dengan unit.');
             return;
         }
@@ -1031,7 +1038,7 @@ class Index extends Component
         $this->search = '';
         $this->filterYear = now()->year;
         $this->filterPeriodType = '';
-        $this->filterClassificationId = '';
+        $this->filterClassificationId = null;
         $this->filterStatus = '';
         $this->filterQuarter = null;
 
@@ -1039,8 +1046,8 @@ class Index extends Component
             $this->filterUnitId = null;
         }
 
-        if ($this->isKanit()) {
-            $this->filterUnitId = $this->kanitUnitId();
+        if ($this->isUnitManager()) {
+            $this->filterUnitId = $this->unitManagerUnitId();
         }
 
         $this->resetPage();
@@ -1077,8 +1084,8 @@ class Index extends Component
         $this->achievement_method = 'auto_report';
         $this->is_active = true;
 
-        if ($this->isKanit()) {
-            $this->unit_id = $this->kanitUnitId();
+        if ($this->isUnitManager()) {
+            $this->unit_id = $this->unitManagerUnitId();
         }
 
         $this->resetValidation();
@@ -1110,8 +1117,8 @@ class Index extends Component
                 'supports',
                 'activeSupports',
             ])
-            ->when($this->isKanit(), function ($query) {
-                $query->where('unit_id', $this->kanitUnitId());
+            ->when($this->isUnitManager(), function ($query) {
+                $query->where('unit_id', $this->unitManagerUnitId());
             });
     }
 
@@ -1125,7 +1132,17 @@ class Index extends Component
         return (bool) Auth::user()?->isKanit();
     }
 
-    private function kanitUnitId(): ?int
+    private function isGkm(): bool
+    {
+        return (bool) Auth::user()?->isGkm();
+    }
+
+    private function isUnitManager(): bool
+    {
+        return $this->isKanit() || $this->isGkm();
+    }
+
+    private function unitManagerUnitId(): ?int
     {
         return Auth::user()?->employee?->unit_id;
     }
@@ -1157,8 +1174,8 @@ class Index extends Component
             ->paginate(10);
 
         $units = Unit::query()
-            ->when($this->isKanit(), function ($query) {
-                $query->whereKey($this->kanitUnitId());
+            ->when($this->isUnitManager(), function ($query) {
+                $query->whereKey($this->unitManagerUnitId());
             })
             ->orderBy('name')
             ->get();
@@ -1170,16 +1187,16 @@ class Index extends Component
 
         $servers = Server::query()
             ->where('is_active', true)
-            ->when($this->isKanit(), function ($query) {
-                $query->where('unit_id', $this->kanitUnitId());
+            ->when($this->isUnitManager(), function ($query) {
+                $query->where('unit_id', $this->unitManagerUnitId());
             })
             ->orderBy('name')
             ->get();
 
         $applications = Application::query()
             ->where('is_active', true)
-            ->when($this->isKanit(), function ($query) {
-                $query->where('unit_id', $this->kanitUnitId());
+            ->when($this->isUnitManager(), function ($query) {
+                $query->where('unit_id', $this->unitManagerUnitId());
             })
             ->orderBy('name')
             ->get();
@@ -1230,6 +1247,8 @@ class Index extends Component
             'applications' => $applications,
             'isAdmin' => $this->isAdmin(),
             'isKanit' => $this->isKanit(),
+            'isGkm' => $this->isGkm(),
+            'isUnitManager' => $this->isUnitManager(),
             'detailTarget' => $detailTarget,
             'matchingReports' => $matchingReports,
             'matchingReportsTotal' => $matchingReportsTotal,

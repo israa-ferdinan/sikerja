@@ -4,6 +4,7 @@ namespace App\Livewire\Reports;
 
 use App\Models\DailyReport;
 use App\Services\ActivityLogger;
+use App\Services\MonthlyReportApprovalService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
@@ -58,9 +59,27 @@ class MyDailyReports extends Component
                 'delegation',
                 'dutyOwnerEmployee',
                 'reportedByEmployee',
+                'operationalTicket',
             ])
             ->where('employee_id', $user->employee_id)
             ->findOrFail($id);
+
+        if (app(MonthlyReportApprovalService::class)->isReportDateLocked(
+            unitId: (int) $report->unit_id,
+            reportDate: $report->report_date
+        )) {
+            session()->flash('error', 'Laporan periode ini sudah difinalisasi oleh Kanit dan tidak dapat dihapus.');
+            return;
+        }
+
+                if ($report->operational_ticket_id) {
+            session()->flash(
+                'error',
+                'Laporan yang berasal dari Tiket Operasional tidak dapat dihapus.'
+            );
+
+            return;
+        }
 
         $oldValues = $report->toArray();
 
@@ -120,6 +139,7 @@ class MyDailyReports extends Component
                 'delegation',
                 'dutyOwnerEmployee',
                 'reportedByEmployee',
+                'operationalTicket',
             ])
             ->where('employee_id', $user->employee_id)
             ->whereMonth('report_date', $selectedMonth->format('m'))
@@ -140,7 +160,24 @@ class MyDailyReports extends Component
                             $serverQuery->where('name', 'like', '%' . $this->search . '%');
                         })
                         ->orWhereHas('application', function ($applicationQuery) {
-                            $applicationQuery->where('name', 'like', '%' . $this->search . '%');
+                            $applicationQuery->where(
+                                'name',
+                                'like',
+                                '%' . $this->search . '%'
+                            );
+                        })
+                        ->orWhereHas('operationalTicket', function ($ticketQuery) {
+                            $ticketQuery
+                                ->where(
+                                    'ticket_code',
+                                    'like',
+                                    '%' . $this->search . '%'
+                                )
+                                ->orWhere(
+                                    'title',
+                                    'like',
+                                    '%' . $this->search . '%'
+                                );
                         });
                 });
             })

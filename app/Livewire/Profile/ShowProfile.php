@@ -2,9 +2,9 @@
 
 namespace App\Livewire\Profile;
 
+use App\Services\ActivityLogger;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -75,19 +75,48 @@ class ShowProfile extends Component
             'signature.max' => 'Ukuran tanda tangan maksimal 1 MB.',
         ]);
 
-        if ($employee->signature_path && Storage::disk('public')->exists($employee->signature_path)) {
-            Storage::disk('public')->delete($employee->signature_path);
-        }
+        $oldSignaturePath = $employee->signature_path;
+        $hadSignature = filled($oldSignaturePath);
 
+        /*
+        * R11B:
+        * Jangan hapus file tanda tangan lama saat replace.
+        * monthly_report_approvals.approver_signature_path menyimpan path tanda tangan saat finalisasi.
+        * Kalau file lama dihapus, export periode lama bisa kehilangan gambar tanda tangan.
+        */
         $path = $this->signature->store('employee-signatures', 'public');
 
         $employee->forceFill([
             'signature_path' => $path,
         ])->save();
 
+        ActivityLogger::log(
+            module: 'profile',
+            action: $hadSignature ? 'replace_signature' : 'upload_signature',
+            description: $hadSignature
+                ? 'Mengganti tanda tangan digital profil.'
+                : 'Mengupload tanda tangan digital profil.',
+            subject: $employee,
+            oldValues: [
+                'employee_id' => $employee->id,
+                'employee_name' => $employee->name,
+                'signature_path' => $oldSignaturePath,
+            ],
+            newValues: [
+                'employee_id' => $employee->id,
+                'employee_name' => $employee->name,
+                'signature_path' => $path,
+            ],
+        );
+
         $this->reset('signature');
 
-        session()->flash('success', 'Tanda tangan berhasil diperbarui.');
+        session()->flash(
+            'success',
+            $hadSignature
+                ? 'Tanda tangan berhasil diganti. Tanda tangan lama tetap disimpan untuk menjaga arsip export periode sebelumnya.'
+                : 'Tanda tangan berhasil diupload.'
+        );
     }
 
     public function deleteSignature(): void
@@ -100,15 +129,36 @@ class ShowProfile extends Component
             return;
         }
 
-        if ($employee->signature_path && Storage::disk('public')->exists($employee->signature_path)) {
-            Storage::disk('public')->delete($employee->signature_path);
-        }
+        $oldSignaturePath = $employee->signature_path;
 
+        /*
+        * R11B:
+        * Jangan hapus file fisik tanda tangan dari storage.
+        * Cukup lepas dari profil pegawai agar export lama yang sudah menyimpan path tanda tangan
+        * tetap bisa menampilkan gambar historis.
+        */
         $employee->forceFill([
             'signature_path' => null,
         ])->save();
 
-        session()->flash('success', 'Tanda tangan berhasil dihapus.');
+        ActivityLogger::log(
+            module: 'profile',
+            action: 'delete_signature',
+            description: 'Melepas tanda tangan digital dari profil.',
+            subject: $employee,
+            oldValues: [
+                'employee_id' => $employee->id,
+                'employee_name' => $employee->name,
+                'signature_path' => $oldSignaturePath,
+            ],
+            newValues: [
+                'employee_id' => $employee->id,
+                'employee_name' => $employee->name,
+                'signature_path' => null,
+            ],
+        );
+
+        session()->flash('success', 'Tanda tangan berhasil dilepas dari profil. File lama tetap disimpan untuk menjaga arsip export periode sebelumnya.');
     }
 
     public function render()

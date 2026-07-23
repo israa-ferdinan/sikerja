@@ -33,6 +33,7 @@ class DailyReport extends Model
         'delegation_id',
         'duty_owner_employee_id',
         'reported_by_employee_id',
+        'operational_ticket_id',
     ];
 
     protected $casts = [
@@ -88,5 +89,13 @@ class DailyReport extends Model
     public function reportedByEmployee()
     {
         return $this->belongsTo(Employee::class, 'reported_by_employee_id');
+    }
+
+    public function operationalTicket()
+    {
+        return $this->belongsTo(
+            OperationalTicket::class,
+            'operational_ticket_id'
+        );
     }
 }

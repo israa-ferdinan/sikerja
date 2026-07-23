@@ -175,13 +175,23 @@
         <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
                 <h2 class="text-base font-semibold text-gray-900">
-                    Tanda Tangan Digital Kanit
+                    Tanda Tangan Digital
                 </h2>
 
                 <p class="mt-1 text-sm leading-6 text-gray-500">
-                    Upload gambar tanda tangan untuk digunakan pada finalisasi dan export laporan bulanan.
+                    Upload gambar tanda tangan untuk digunakan pada laporan kegiatan, validasi laporan, dan export laporan bulanan.
                     Format yang didukung: PNG, JPG, JPEG, atau WEBP. Maksimal 1 MB.
                 </p>
+
+                @if ($user->role?->name === 'kanit')
+                    <p class="mt-2 text-xs leading-5 text-blue-700">
+                        Untuk Kanit, tanda tangan ini juga digunakan saat finalisasi laporan bulanan unit.
+                    </p>
+                @elseif (in_array($user->role?->name, ['pegawai', 'gkm'], true))
+                    <p class="mt-2 text-xs leading-5 text-blue-700">
+                        Untuk Pegawai/GKM, tanda tangan ini akan digunakan sebagai tanda tangan pelapor pada laporan bulanan.
+                    </p>
+                @endif
             </div>
 
             @if ($employee?->signature_path)
@@ -232,8 +242,14 @@
                                 Belum ada tanda tangan
                             </p>
                             <p class="mt-1 text-xs leading-5 text-gray-500">
-                                Tanda tangan wajib tersedia sebelum Kanit melakukan finalisasi laporan bulanan.
+                                Tanda tangan belum tersedia. Anda tetap bisa menggunakan aplikasi, namun tanda tangan diperlukan agar laporan bulanan tampil lengkap.
                             </p>
+
+                            @if ($user->role?->name === 'kanit')
+                                <p class="mt-1 text-xs leading-5 text-gray-500">
+                                    Khusus Kanit, tanda tangan wajib tersedia sebelum finalisasi laporan bulanan.
+                                </p>
+                            @endif
                         </div>
                     </div>
                 @endif
@@ -300,7 +316,11 @@
                 </div>
 
                 <p class="mt-4 text-xs leading-5 text-gray-500">
-                    Disarankan memakai gambar tanda tangan dengan background transparan atau putih agar rapi saat masuk ke export Excel.
+                    Disarankan memakai gambar tanda tangan dengan background transparan atau putih agar rapi saat masuk ke export laporan bulanan.
+                </p>
+
+                <p class="mt-2 text-xs leading-5 text-gray-500">
+                    Jika tanda tangan diganti, tanda tangan baru akan digunakan untuk laporan berikutnya. Arsip export lama tetap dijaga agar tidak kehilangan gambar tanda tangan.
                 </p>
             </form>
         </div>

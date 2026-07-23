@@ -30,7 +30,9 @@ class MonthlyReportSingleSheetExport implements FromCollection, WithHeadings, Sh
         public int $month,
         public int $year,
         public ?int $unitId = null,
-        public ?string $printedBy = null
+        public ?string $printedBy = null,
+        public ?int $employeeId = null,
+        public string $exportMode = 'unit'
     ) {
     }
 
@@ -41,7 +43,9 @@ class MonthlyReportSingleSheetExport implements FromCollection, WithHeadings, Sh
 
     public function title(): string
     {
-        return 'Laporan Bulanan';
+        return $this->exportMode === 'employee'
+            ? 'Laporan Pegawai'
+            : 'Laporan Bulanan';
     }
 
     public function collection(): Collection
@@ -63,6 +67,9 @@ class MonthlyReportSingleSheetExport implements FromCollection, WithHeadings, Sh
             ->whereYear('report_date', $this->year)
             ->when($this->unitId, function ($query) {
                 $query->where('unit_id', $this->unitId);
+            })
+            ->when($this->exportMode === 'employee' && $this->employeeId, function ($query) {
+                $query->where('employee_id', $this->employeeId);
             })
             ->orderBy('report_date')
             ->orderBy('employee_id')
@@ -111,13 +118,25 @@ class MonthlyReportSingleSheetExport implements FromCollection, WithHeadings, Sh
                 $headerRange = 'A' . $tableStartRow . ':' . $highestColumn . $tableStartRow;
 
                 $sheet->mergeCells('A1:G1');
-                $sheet->setCellValue('A1', 'REKAP LAPORAN KERJA BULANAN');
+                $sheet->setCellValue(
+                    'A1',
+                    $this->exportMode === 'employee'
+                        ? 'LAPORAN KERJA BULANAN PEGAWAI'
+                        : 'REKAP LAPORAN KERJA BULANAN'
+                );
 
                 $sheet->setCellValue('A3', 'Periode');
                 $sheet->setCellValue('B3', ': ' . $this->monthName() . ' ' . $this->year);
 
                 $sheet->setCellValue('A4', 'Unit');
                 $sheet->setCellValue('B4', ': ' . $this->unitName());
+                if ($this->exportMode === 'employee') {
+                    $sheet->setCellValue('D3', 'Pegawai');
+                    $sheet->setCellValue('E3', ': ' . ($this->employeeName() ?? '-'));
+
+                    $sheet->setCellValue('D4', 'NIP');
+                    $sheet->setCellValue('E4', ': ' . ($this->employeeNip() ?? '-'));
+                }
 
                 $sheet->setCellValue('A5', 'Total Laporan');
                 $sheet->setCellValue('B5', ': ' . $this->totalReports());
@@ -201,7 +220,11 @@ class MonthlyReportSingleSheetExport implements FromCollection, WithHeadings, Sh
 
                 $sheet->freezePane('A11');
 
-                $this->appendApprovalSignatureBlock($sheet, $highestRow);
+                if ($this->exportMode === 'employee') {
+                    $this->appendEmployeeReportSignatureBlock($sheet, $highestRow);
+                } else {
+                    $this->appendApprovalSignatureBlock($sheet, $highestRow);
+                }
             },
         ];
     }
@@ -273,6 +296,9 @@ class MonthlyReportSingleSheetExport implements FromCollection, WithHeadings, Sh
             ->whereYear('report_date', $this->year)
             ->when($this->unitId, function ($query) {
                 $query->where('unit_id', $this->unitId);
+            })
+            ->when($this->exportMode === 'employee' && $this->employeeId, function ($query) {
+                $query->where('employee_id', $this->employeeId);
             });
     }
 
@@ -303,24 +329,238 @@ class MonthlyReportSingleSheetExport implements FromCollection, WithHeadings, Sh
             ->count();
     }
 
-    private function appendApprovalSignatureBlock($sheet, int $highestRow): void
+    private function appendEmployeeSignatureBlock($sheet, int $highestRow): int
     {
-        $approval = $this->approval();
+        $employees = $this->employeeSignatureRows();
 
         $startRow = $highestRow + 3;
 
-        $sheet->mergeCells("E{$startRow}:G{$startRow}");
-        $sheet->setCellValue("E{$startRow}", 'Status Finalisasi');
+        $sheet->mergeCells("A{$startRow}:D{$startRow}");
+        $sheet->setCellValue("A{$startRow}", 'Tanda Tangan Pegawai Pelapor');
 
-        $sheet->mergeCells('E' . ($startRow + 1) . ':G' . ($startRow + 1));
+        $sheet->getStyle("A{$startRow}:D{$startRow}")->applyFromArray([
+            'font' => [
+                'bold' => true,
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => [
+                    'rgb' => 'E5E7EB',
+                ],
+            ],
+            'borders' => [
+                'outline' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                ],
+            ],
+        ]);
+
+        if ($employees->isEmpty()) {
+            $emptyRow = $startRow + 1;
+
+            $sheet->mergeCells("A{$emptyRow}:D{$emptyRow}");
+            $sheet->setCellValue("A{$emptyRow}", 'Tidak ada pegawai pelapor pada periode ini.');
+
+            $sheet->getStyle("A{$emptyRow}:D{$emptyRow}")->applyFromArray([
+                'font' => [
+                    'italic' => true,
+                    'color' => [
+                        'rgb' => '6B7280',
+                    ],
+                ],
+                'alignment' => [
+                    'horizontal' => Alignment::HORIZONTAL_CENTER,
+                    'vertical' => Alignment::VERTICAL_CENTER,
+                    'wrapText' => true,
+                ],
+                'borders' => [
+                    'outline' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                    ],
+                ],
+            ]);
+
+            return $emptyRow;
+        }
+
+        $headerRow = $startRow + 1;
+
+        $sheet->setCellValue("A{$headerRow}", 'No.');
+        $sheet->setCellValue("B{$headerRow}", 'Nama Pegawai');
+        $sheet->setCellValue("C{$headerRow}", 'Jumlah Laporan');
+        $sheet->setCellValue("D{$headerRow}", 'Tanda Tangan');
+
+        $sheet->getStyle("A{$headerRow}:D{$headerRow}")->applyFromArray([
+            'font' => [
+                'bold' => true,
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => [
+                    'rgb' => 'F3F4F6',
+                ],
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                ],
+            ],
+        ]);
+
+        $row = $headerRow + 1;
+
+        foreach ($employees as $index => $employeeRow) {
+            $sheet->setCellValue("A{$row}", $index + 1);
+            $sheet->setCellValue("B{$row}", $employeeRow['name']);
+            $sheet->setCellValue("C{$row}", $employeeRow['total_reports']);
+
+            $sheet->getRowDimension($row)->setRowHeight(64);
+
+            $sheet->getStyle("A{$row}:D{$row}")->applyFromArray([
+                'alignment' => [
+                    'vertical' => Alignment::VERTICAL_CENTER,
+                    'wrapText' => true,
+                ],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                    ],
+                ],
+            ]);
+
+            $sheet->getStyle("A{$row}:A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("C{$row}:C{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("D{$row}:D{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+            if ($employeeRow['signature_path']) {
+                $this->insertSignatureImageCentered(
+                    $sheet,
+                    $employeeRow['signature_path'],
+                    "D{$row}:D{$row}",
+                    'Tanda Tangan Pegawai'
+                );
+            } else {
+                $sheet->setCellValue("D{$row}", 'Belum ada tanda tangan');
+
+                $sheet->getStyle("D{$row}:D{$row}")->applyFromArray([
+                    'font' => [
+                        'italic' => true,
+                        'color' => [
+                            'rgb' => '92400E',
+                        ],
+                    ],
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => [
+                            'rgb' => 'FEF3C7',
+                        ],
+                    ],
+                ]);
+            }
+
+            $row++;
+        }
+
+        $lastRow = $row - 1;
+
+        $sheet->getStyle("A{$headerRow}:D{$lastRow}")->applyFromArray([
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                ],
+            ],
+        ]);
+
+        return $lastRow;
+    }
+
+    private function employeeSignatureRows(): Collection
+    {
+        return DailyReport::query()
+            ->with('employee')
+            ->whereMonth('report_date', $this->month)
+            ->whereYear('report_date', $this->year)
+            ->when($this->unitId, function ($query) {
+                $query->where('unit_id', $this->unitId);
+            })
+            ->whereNotNull('employee_id')
+            ->get()
+            ->groupBy('employee_id')
+            ->map(function ($reports) {
+                $employee = $reports->first()->employee;
+
+                return [
+                    'name' => $employee?->name ?? '-',
+                    'signature_path' => $employee?->signature_path,
+                    'total_reports' => $reports->count(),
+                ];
+            })
+            ->sortBy('name')
+            ->values();
+    }
+
+    private function employee()
+    {
+        if (! $this->employeeId) {
+            return null;
+        }
+
+        return \App\Models\Employee::query()
+            ->with('unit')
+            ->where('id', $this->employeeId)
+            ->first();
+    }
+
+    private function employeeName(): ?string
+    {
+        return $this->employee()?->name;
+    }
+
+    private function employeeNip(): ?string
+    {
+        return $this->employee()?->nip;
+    }
+
+    private function employeePosition(): ?string
+    {
+        $employee = $this->employee();
+
+        return $employee?->jobPosition?->name
+            ?? $employee?->position
+            ?? null;
+    }
+
+    private function employeeSignaturePath(): ?string
+    {
+        return $this->employee()?->signature_path;
+    }
+
+
+    private function appendEmployeeReportSignatureBlock($sheet, int $highestRow): void
+    {
+        $approval = $this->approval();
+        $employee = $this->employee();
+
+        $startRow = $highestRow + 3;
 
         if (! $approval) {
+            $sheet->mergeCells("A{$startRow}:G" . ($startRow + 1));
             $sheet->setCellValue(
-                'E' . ($startRow + 1),
-                'Belum difinalisasi. Export ini belum memiliki tanda tangan Kanit.'
+                "A{$startRow}",
+                'Belum difinalisasi. Laporan per pegawai ini belum memiliki tanda tangan Kanit.'
             );
 
-            $sheet->getStyle("D{$startRow}:F" . ($startRow + 1))->applyFromArray([
+            $sheet->getRowDimension($startRow)->setRowHeight(34);
+
+            $sheet->getStyle("A{$startRow}:G" . ($startRow + 1))->applyFromArray([
                 'font' => [
                     'italic' => true,
                     'color' => [
@@ -351,44 +591,60 @@ class MonthlyReportSingleSheetExport implements FromCollection, WithHeadings, Sh
             return;
         }
 
-        $sheet->setCellValue('E' . ($startRow + 1), 'Sudah difinalisasi dan disahkan oleh Kanit.');
+        $titleRow = $startRow;
+        $roleRow = $startRow + 1;
+        $imageStartRow = $startRow + 3;
+        $imageEndRow = $startRow + 7;
+        $nameRow = $startRow + 8;
+        $nipRow = $startRow + 9;
+        $dateRow = $startRow + 10;
 
-        $signatureTitleRow = $startRow + 3;
-        $signatureImageRow = $startRow + 5;
-        $nameRow = $startRow + 10;
-        $positionRow = $startRow + 11;
-        $dateRow = $startRow + 12;
+        $sheet->mergeCells("A{$titleRow}:C{$titleRow}");
+        $sheet->mergeCells("E{$titleRow}:G{$titleRow}");
+        $sheet->setCellValue("A{$titleRow}", 'Mengetahui,');
+        $sheet->setCellValue("E{$titleRow}", 'Pelapor,');
 
-        $sheet->mergeCells("E{$signatureTitleRow}:G{$signatureTitleRow}");
-        $sheet->setCellValue("E{$signatureTitleRow}", 'Mengetahui,');
-
-        $sheet->mergeCells('E' . ($signatureTitleRow + 1) . ':G' . ($signatureTitleRow + 1));
+        $sheet->mergeCells("A{$roleRow}:C{$roleRow}");
+        $sheet->mergeCells("E{$roleRow}:G{$roleRow}");
         $sheet->setCellValue(
-            'E' . ($signatureTitleRow + 1),
+            "A{$roleRow}",
             $approval->approver_unit_name
                 ? 'Kepala Unit ' . $approval->approver_unit_name
                 : 'Kepala Unit'
         );
+        $sheet->setCellValue("E{$roleRow}", $this->employeePosition() ?? 'Pegawai');
 
+        $sheet->mergeCells("A{$nameRow}:C{$nameRow}");
         $sheet->mergeCells("E{$nameRow}:G{$nameRow}");
-        $sheet->setCellValue("E{$nameRow}", $approval->approver_name ?? '-');
+        $sheet->setCellValue("A{$nameRow}", $approval->approver_name ?? '-');
+        $sheet->setCellValue("E{$nameRow}", $employee?->name ?? '-');
 
-        $sheet->mergeCells("E{$positionRow}:G{$positionRow}");
+        $sheet->mergeCells("A{$nipRow}:C{$nipRow}");
+        $sheet->mergeCells("E{$nipRow}:G{$nipRow}");
         $sheet->setCellValue(
-            "E{$positionRow}",
-            trim(
-                ($approval->approver_nip ? 'NIP. ' . $approval->approver_nip . ' | ' : '')
-                . ($approval->approver_position ?? '-')
-            )
+            "A{$nipRow}",
+            $approval->approver_nip
+                ? 'NIP. ' . $approval->approver_nip
+                : 'NIP. -'
+        );
+        $sheet->setCellValue(
+            "E{$nipRow}",
+            $employee?->nip
+                ? 'NIP. ' . $employee->nip
+                : 'NIP. -'
         );
 
-        $sheet->mergeCells("E{$dateRow}:G{$dateRow}");
+        $sheet->mergeCells("A{$dateRow}:G{$dateRow}");
         $sheet->setCellValue(
-            "E{$dateRow}",
+            "A{$dateRow}",
             'Tanggal finalisasi: ' . ($approval->approved_at?->format('d/m/Y H:i') ?? '-')
         );
 
-        $sheet->getStyle("E{$startRow}:G{$dateRow}")->applyFromArray([
+        for ($row = $imageStartRow; $row <= $imageEndRow; $row++) {
+            $sheet->getRowDimension($row)->setRowHeight(22);
+        }
+
+        $sheet->getStyle("A{$titleRow}:G{$dateRow}")->applyFromArray([
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
                 'vertical' => Alignment::VERTICAL_CENTER,
@@ -396,7 +652,149 @@ class MonthlyReportSingleSheetExport implements FromCollection, WithHeadings, Sh
             ],
         ]);
 
-        $sheet->getStyle("E{$startRow}:G{$startRow}")->applyFromArray([
+        $sheet->getStyle("A{$nameRow}:G{$nameRow}")->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'underline' => true,
+            ],
+        ]);
+
+        $this->insertSignatureImageCentered(
+            $sheet,
+            $approval->approver_signature_path,
+            "A{$imageStartRow}:C{$imageEndRow}",
+            'Tanda Tangan Kanit'
+        );
+
+        if ($employee?->signature_path) {
+            $this->insertSignatureImageCentered(
+                $sheet,
+                $employee->signature_path,
+                "E{$imageStartRow}:G{$imageEndRow}",
+                'Tanda Tangan Pegawai'
+            );
+        } else {
+            $sheet->mergeCells("E{$imageStartRow}:G{$imageEndRow}");
+            $sheet->setCellValue("E{$imageStartRow}", 'Belum ada tanda tangan pegawai');
+
+            $sheet->getStyle("E{$imageStartRow}:G{$imageEndRow}")->applyFromArray([
+                'font' => [
+                    'italic' => true,
+                    'color' => [
+                        'rgb' => '92400E',
+                    ],
+                ],
+                'alignment' => [
+                    'horizontal' => Alignment::HORIZONTAL_CENTER,
+                    'vertical' => Alignment::VERTICAL_CENTER,
+                    'wrapText' => true,
+                ],
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => [
+                        'rgb' => 'FEF3C7',
+                    ],
+                ],
+            ]);
+        }
+    }
+
+    private function appendApprovalSignatureBlock($sheet, int $highestRow): void
+    {
+        $approval = $this->approval();
+
+        $startRow = $highestRow + 3;
+
+        $sheet->mergeCells("A{$startRow}:G{$startRow}");
+        $sheet->setCellValue("A{$startRow}", 'Status Finalisasi');
+
+        $sheet->mergeCells('A' . ($startRow + 1) . ':G' . ($startRow + 1));
+
+        if (! $approval) {
+            $sheet->setCellValue(
+                'A' . ($startRow + 1),
+                'Belum difinalisasi. Export ini belum memiliki tanda tangan Kanit.'
+            );
+
+            $sheet->getRowDimension($startRow)->setRowHeight(22);
+            $sheet->getRowDimension($startRow + 1)->setRowHeight(34);
+
+            $sheet->getStyle("A{$startRow}:G" . ($startRow + 1))->applyFromArray([
+                'font' => [
+                    'italic' => true,
+                    'color' => [
+                        'rgb' => '92400E',
+                    ],
+                ],
+                'alignment' => [
+                    'horizontal' => Alignment::HORIZONTAL_CENTER,
+                    'vertical' => Alignment::VERTICAL_CENTER,
+                    'wrapText' => true,
+                ],
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => [
+                        'rgb' => 'FEF3C7',
+                    ],
+                ],
+                'borders' => [
+                    'outline' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color' => [
+                            'rgb' => 'F59E0B',
+                        ],
+                    ],
+                ],
+            ]);
+
+            return;
+        }
+
+        $sheet->setCellValue('A' . ($startRow + 1), 'Sudah difinalisasi dan disahkan oleh Kanit.');
+
+        $signatureTitleRow = $startRow + 3;
+        $signatureImageRow = $startRow + 5;
+        $nameRow = $startRow + 10;
+        $positionRow = $startRow + 11;
+        $dateRow = $startRow + 12;
+
+        $sheet->mergeCells("A{$signatureTitleRow}:G{$signatureTitleRow}");
+        $sheet->setCellValue("A{$signatureTitleRow}", 'Mengetahui,');
+
+        $sheet->mergeCells('A' . ($signatureTitleRow + 1) . ':G' . ($signatureTitleRow + 1));
+        $sheet->setCellValue(
+            'A' . ($signatureTitleRow + 1),
+            $approval->approver_unit_name
+                ? 'Kepala Unit ' . $approval->approver_unit_name
+                : 'Kepala Unit'
+        );
+
+        $sheet->mergeCells("A{$nameRow}:G{$nameRow}");
+        $sheet->setCellValue("A{$nameRow}", $approval->approver_name ?? '-');
+
+        $sheet->mergeCells("A{$positionRow}:G{$positionRow}");
+        $sheet->setCellValue(
+            "A{$positionRow}",
+            $approval->approver_nip
+                ? 'NIP. ' . $approval->approver_nip
+                : 'NIP. -'
+        );
+
+        $sheet->mergeCells("A{$dateRow}:G{$dateRow}");
+        $sheet->setCellValue(
+            "A{$dateRow}",
+            'Tanggal finalisasi: ' . ($approval->approved_at?->format('d/m/Y H:i') ?? '-')
+        );
+
+        $sheet->getStyle("A{$startRow}:G{$dateRow}")->applyFromArray([
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true,
+            ],
+        ]);
+
+        $sheet->getStyle("A{$startRow}:G{$startRow}")->applyFromArray([
             'font' => [
                 'bold' => true,
             ],
@@ -413,7 +811,7 @@ class MonthlyReportSingleSheetExport implements FromCollection, WithHeadings, Sh
             ],
         ]);
 
-        $sheet->getStyle('E' . ($startRow + 1) . ':G' . ($startRow + 1))->applyFromArray([
+        $sheet->getStyle('A' . ($startRow + 1) . ':G' . ($startRow + 1))->applyFromArray([
             'font' => [
                 'color' => [
                     'rgb' => '047857',
@@ -421,7 +819,7 @@ class MonthlyReportSingleSheetExport implements FromCollection, WithHeadings, Sh
             ],
         ]);
 
-        $sheet->getStyle("E{$nameRow}:G{$nameRow}")->applyFromArray([
+        $sheet->getStyle("A{$nameRow}:G{$nameRow}")->applyFromArray([
             'font' => [
                 'bold' => true,
                 'underline' => true,
@@ -435,7 +833,7 @@ class MonthlyReportSingleSheetExport implements FromCollection, WithHeadings, Sh
         $this->insertSignatureImageCentered(
             $sheet,
             $approval->approver_signature_path,
-            "E{$signatureImageRow}:G" . ($signatureImageRow + 4)
+            "A{$signatureImageRow}:G" . ($signatureImageRow + 4)
         );
     }
 
@@ -453,7 +851,7 @@ class MonthlyReportSingleSheetExport implements FromCollection, WithHeadings, Sh
             ->first();
     }
 
-    private function insertSignatureImageCentered($sheet, ?string $signaturePath, string $range): void
+    private function insertSignatureImageCentered($sheet, ?string $signaturePath, string $range, string $label = 'Tanda Tangan Kanit'): void
     {
         if (! $signaturePath) {
             return;
@@ -503,8 +901,8 @@ class MonthlyReportSingleSheetExport implements FromCollection, WithHeadings, Sh
         $offsetY = max(0, (int) floor(($rangeHeight - $displayHeight) / 2));
 
         $drawing = new Drawing();
-        $drawing->setName('Tanda Tangan Kanit');
-        $drawing->setDescription('Tanda tangan Kanit');
+        $drawing->setName($label);
+        $drawing->setDescription($label);
         $drawing->setPath($realPath);
         $drawing->setHeight($displayHeight);
         $drawing->setCoordinates($startCell);

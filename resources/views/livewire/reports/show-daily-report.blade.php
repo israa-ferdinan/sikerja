@@ -33,6 +33,12 @@
                                 {{ $report->photos->count() }} foto
                             </span>
                         </div>
+
+                        @if($report->operationalTicket)
+                            <span class="inline-flex rounded-full border border-amber-300/20 bg-amber-400/15 px-3 py-1 text-xs font-semibold text-amber-100">
+                                Tiket Operasional
+                            </span>
+                        @endif
                     </div>
 
                     <div class="flex flex-wrap gap-2">
@@ -44,6 +50,16 @@
                             Kembali
                         </a>
 
+                        @if($report->operationalTicket)
+                            <a
+                                href="{{ route('operations.tickets.show', $report->operationalTicket) }}"
+                                class="inline-flex items-center justify-center gap-2 rounded-xl border border-amber-300/20 bg-amber-400/15 px-3 py-2 text-xs font-semibold text-amber-100 shadow-sm transition hover:bg-amber-400/20"
+                            >
+                                <x-icon name="ticket" class="h-4 w-4" />
+                                Lihat Tiket Sumber
+                            </a>
+                        @endif
+
                         @if (! $isLocked)
                             <a
                                 href="{{ route('pegawai.reports.edit', $report) }}"
@@ -53,22 +69,24 @@
                                 Edit
                             </a>
 
-                            <button
-                                type="button"
-                                x-data
-                                x-on:click="$dispatch('open-confirm-modal', {
-                                    title: 'Hapus laporan?',
-                                    message: 'Laporan ini beserta foto terkait akan dihapus. Tindakan ini tidak bisa dibatalkan.',
-                                    confirmText: 'Ya, Hapus',
-                                    cancelText: 'Batal',
-                                    variant: 'danger',
-                                    onConfirm: () => $wire.delete()
-                                })"
-                                class="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-rose-400/40 bg-rose-500/10 px-5 text-sm font-semibold text-rose-100 transition hover:bg-rose-500/20 hover:text-white"
-                            >
-                                <x-icon name="trash-2" class="h-4 w-4" />
-                                <span>Hapus</span>
-                            </button>
+                            @if(! $report->operational_ticket_id)
+                                <button
+                                    type="button"
+                                    x-data
+                                    x-on:click="$dispatch('open-confirm-modal', {
+                                        title: 'Hapus laporan?',
+                                        message: 'Laporan ini beserta foto terkait akan dihapus. Tindakan ini tidak bisa dibatalkan.',
+                                        confirmText: 'Ya, Hapus',
+                                        cancelText: 'Batal',
+                                        variant: 'danger',
+                                        onConfirm: () => $wire.delete()
+                                    })"
+                                    class="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-rose-400/40 bg-rose-500/10 px-5 text-sm font-semibold text-rose-100 transition hover:bg-rose-500/20 hover:text-white"
+                                >
+                                    <x-icon name="trash-2" class="h-4 w-4" />
+                                    <span>Hapus</span>
+                                </button>
+                            @endif
                         @else
                             <span class="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-emerald-300/20 bg-emerald-400/15 px-5 text-sm font-semibold text-emerald-100">
                                 <x-icon name="lock" class="h-4 w-4" />
@@ -194,6 +212,58 @@
             </div>
 
             <div class="space-y-6 xl:col-span-4">
+                {{-- Tiket sumber --}}
+                @if($report->operationalTicket)
+                    <x-ui.card>
+                        <div class="mb-5 flex items-start gap-3">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
+                                <x-icon name="ticket" class="h-5 w-5" />
+                            </div>
+
+                            <div>
+                                <h2 class="text-base font-bold text-slate-900">
+                                    Tiket Operasional
+                                </h2>
+
+                                <p class="mt-1 text-sm leading-6 text-slate-500">
+                                    Laporan ini dibuat dari aktivitas penanganan tiket operasional.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                                <p class="text-xs font-bold uppercase tracking-wide text-amber-700">
+                                    Kode Tiket
+                                </p>
+
+                                <p class="mt-1 break-words text-sm font-bold text-amber-950">
+                                    {{ $report->operationalTicket->ticket_code }}
+                                </p>
+                            </div>
+
+                            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                <p class="text-xs font-bold uppercase tracking-wide text-slate-500">
+                                    Status Tiket
+                                </p>
+
+                                <p class="mt-1 text-sm font-semibold text-slate-900">
+                                    {{ $report->operationalTicket->status_label }}
+                                </p>
+                            </div>
+
+                            <a
+                                href="{{ route('operations.tickets.show', $report->operationalTicket) }}"
+                                class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-amber-700"
+                            >
+                                <x-icon name="arrow-up-right" class="h-4 w-4" />
+                                Buka Detail Tiket
+                            </a>
+                        </div>
+                    </x-ui.card>
+                @endif
+
+                {{-- Informasi laporan --}}
                 <x-ui.card>
                     <div class="mb-5 flex items-start gap-3">
                         <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
@@ -201,33 +271,52 @@
                         </div>
 
                         <div>
-                            <h2 class="text-base font-bold text-slate-900">Informasi Laporan</h2>
-                            <p class="mt-1 text-sm leading-6 text-slate-500">Ringkasan data utama laporan kerja.</p>
+                            <h2 class="text-base font-bold text-slate-900">
+                                Informasi Laporan
+                            </h2>
+
+                            <p class="mt-1 text-sm leading-6 text-slate-500">
+                                Ringkasan data utama laporan kerja.
+                            </p>
                         </div>
                     </div>
 
                     <div class="space-y-3">
                         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Tanggal</p>
+                            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">
+                                Tanggal
+                            </p>
+
                             <p class="mt-1 text-sm font-semibold text-slate-900">
                                 {{ $report->report_date?->translatedFormat('d F Y') ?? '-' }}
                             </p>
                         </div>
 
                         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Unit</p>
-                            <p class="mt-1 text-sm font-semibold text-slate-900">{{ $report->unit?->name ?? '-' }}</p>
+                            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">
+                                Unit
+                            </p>
+
+                            <p class="mt-1 text-sm font-semibold text-slate-900">
+                                {{ $report->unit?->name ?? '-' }}
+                            </p>
                         </div>
 
                         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Pelapor</p>
+                            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">
+                                Pelapor
+                            </p>
+
                             <p class="mt-1 text-sm font-semibold text-slate-900">
-                                {{ $report->reportedByEmployee?->name ?? $report->employee?->name ?? '-' }}
+                                {{ $report->reportedByEmployee?->name
+                                    ?? $report->employee?->name
+                                    ?? '-' }}
                             </p>
                         </div>
                     </div>
                 </x-ui.card>
 
+                {{-- Tupoksi dan objek --}}
                 <x-ui.card>
                     <div class="mb-5 flex items-start gap-3">
                         <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
@@ -235,18 +324,27 @@
                         </div>
 
                         <div>
-                            <h2 class="text-base font-bold text-slate-900">Tupoksi & Objek</h2>
-                            <p class="mt-1 text-sm leading-6 text-slate-500">Informasi tupoksi yang digunakan pada laporan.</p>
+                            <h2 class="text-base font-bold text-slate-900">
+                                Tupoksi & Objek
+                            </h2>
+
+                            <p class="mt-1 text-sm leading-6 text-slate-500">
+                                Informasi tupoksi yang digunakan pada laporan.
+                            </p>
                         </div>
                     </div>
 
                     <div class="space-y-3">
                         <div class="rounded-2xl border border-cyan-100 bg-cyan-50 p-4">
                             <div class="mb-2 flex flex-wrap items-center gap-2">
-                                @if ($report->is_delegated)
-                                    <span class="inline-flex rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700 ring-1 ring-indigo-100">Delegasi</span>
+                                @if($report->is_delegated)
+                                    <span class="inline-flex rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700 ring-1 ring-indigo-100">
+                                        Delegasi
+                                    </span>
                                 @else
-                                    <span class="inline-flex rounded-full bg-cyan-100 px-2.5 py-1 text-xs font-bold text-cyan-700 ring-1 ring-cyan-200">Normal</span>
+                                    <span class="inline-flex rounded-full bg-cyan-100 px-2.5 py-1 text-xs font-bold text-cyan-700 ring-1 ring-cyan-200">
+                                        Normal
+                                    </span>
                                 @endif
 
                                 @if($report->duty?->classification)
@@ -256,57 +354,79 @@
                                 @endif
                             </div>
 
-                            <p class="text-sm font-bold leading-6 text-slate-900">{{ $report->duty->name ?? '-' }}</p>
+                            <p class="text-sm font-bold leading-6 text-slate-900">
+                                {{ $report->duty?->name ?? '-' }}
+                            </p>
                         </div>
 
-                        <div class="grid grid-cols-1 gap-3">
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">
+                                Jenis Objek
+                            </p>
+
+                            <p class="mt-1 text-sm font-semibold text-slate-900">
+                                {{ $report->duty?->object_type_label ?? '-' }}
+                            </p>
+                        </div>
+
+                        @if($report->server)
                             <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                                <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Jenis Objek</p>
+                                <p class="text-xs font-bold uppercase tracking-wide text-slate-500">
+                                    Server
+                                </p>
+
                                 <p class="mt-1 text-sm font-semibold text-slate-900">
-                                    {{ $report->duty?->object_type_label ?? '-' }}
+                                    {{ $report->server->name }}
                                 </p>
                             </div>
+                        @endif
 
-                            @if ($report->server)
-                                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                                    <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Server</p>
-                                    <p class="mt-1 text-sm font-semibold text-slate-900">{{ $report->server?->name }}</p>
-                                </div>
-                            @endif
+                        @if($report->application)
+                            <div class="rounded-2xl border border-cyan-100 bg-cyan-50 p-4">
+                                <p class="text-xs font-bold uppercase tracking-wide text-cyan-700">
+                                    Aplikasi
+                                </p>
 
-                            @if ($report->application)
-                                <div class="rounded-2xl border border-cyan-100 bg-cyan-50 p-4">
-                                    <p class="text-xs font-bold uppercase tracking-wide text-cyan-700">Aplikasi</p>
-                                    <p class="mt-1 text-sm font-semibold text-cyan-950">{{ $report->application?->name }}</p>
-                                </div>
-                            @endif
+                                <p class="mt-1 text-sm font-semibold text-cyan-950">
+                                    {{ $report->application->name }}
+                                </p>
+                            </div>
+                        @endif
 
-                            @if (! $report->server && ! $report->application)
-                                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                                    <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Objek Detail</p>
-                                    <p class="mt-1 text-sm font-semibold text-slate-900">
-                                        Tidak menggunakan server atau aplikasi khusus.
-                                    </p>
-                                </div>
-                            @endif
-                        </div>
+                        @if(!$report->server && !$report->application)
+                            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                <p class="text-xs font-bold uppercase tracking-wide text-slate-500">
+                                    Objek Detail
+                                </p>
 
-                        @if ($report->is_delegated)
+                                <p class="mt-1 text-sm font-semibold text-slate-900">
+                                    Tidak menggunakan server atau aplikasi khusus.
+                                </p>
+                            </div>
+                        @endif
+
+                        @if($report->is_delegated)
                             <div class="rounded-2xl border border-indigo-100 bg-indigo-50 p-4">
-                                <p class="text-xs font-bold uppercase tracking-wide text-indigo-700">Informasi Delegasi</p>
+                                <p class="text-xs font-bold uppercase tracking-wide text-indigo-700">
+                                    Informasi Delegasi
+                                </p>
 
                                 <div class="mt-2 space-y-2 text-sm leading-6 text-indigo-900">
                                     <div>
                                         Pemilik Tupoksi:
-                                        <span class="font-bold">{{ $report->dutyOwnerEmployee?->name ?? '-' }}</span>
+                                        <span class="font-bold">
+                                            {{ $report->dutyOwnerEmployee?->name ?? '-' }}
+                                        </span>
                                     </div>
 
                                     <div>
                                         Dilaporkan Oleh:
-                                        <span class="font-bold">{{ $report->reportedByEmployee?->name ?? '-' }}</span>
+                                        <span class="font-bold">
+                                            {{ $report->reportedByEmployee?->name ?? '-' }}
+                                        </span>
                                     </div>
 
-                                    @if ($report->delegation)
+                                    @if($report->delegation)
                                         <div>
                                             Periode:
                                             <span class="font-bold">

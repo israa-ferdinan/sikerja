@@ -43,6 +43,7 @@ class EditDailyReport extends Component
     public $photoInputKey = 0;
 
     public bool $isLocked = false;
+    public bool $isTicketReport = false;
 
     public function mount(DailyReport $report)
     {
@@ -53,6 +54,7 @@ class EditDailyReport extends Component
         }
 
         $this->report = $report->load('photos');
+        $this->isTicketReport = filled($report->operational_ticket_id);
 
         $this->report_date = $report->report_date?->format('Y-m-d');
         $this->duty_id = $report->duty_id;
@@ -357,11 +359,28 @@ class EditDailyReport extends Component
             ->pluck('file_path')
             ->toArray();
 
+        if ($this->isTicketReport) {
+            $this->report_date = $this->report->report_date?->format('Y-m-d');
+            $this->duty_id = $this->report->duty_id;
+        }
+
         $this->report->update([
-            'duty_id' => $this->duty_id ?: null,
-            'server_id' => $this->shouldShowServerField ? ($this->server_id ?: null) : null,
-            'application_id' => $this->shouldShowApplicationField ? ($this->application_id ?: null) : null,
-            'report_date' => $this->report_date,
+            'duty_id' => $this->isTicketReport
+                ? $this->report->duty_id
+                : ($this->duty_id ?: null),
+
+            'server_id' => $this->shouldShowServerField
+                ? ($this->server_id ?: null)
+                : null,
+
+            'application_id' => $this->shouldShowApplicationField
+                ? ($this->application_id ?: null)
+                : null,
+
+            'report_date' => $this->isTicketReport
+                ? $this->report->report_date
+                : $this->report_date,
+
             'title' => $this->title,
             'description' => $this->description,
             'notes' => $this->notes,

@@ -18,6 +18,7 @@ class DutyDelegation extends Model
         'is_active',
         'notes',
         'created_by',
+        'operational_ticket_id',
     ];
 
     protected $casts = [
@@ -54,5 +55,26 @@ class DutyDelegation extends Model
                 $q->whereNull('end_date')
                     ->orWhereDate('end_date', '>=', $date);
             });
+    }
+
+    public function isAutomaticFromOperationalTicket(): bool
+    {
+        return filled($this->operational_ticket_id);
+    }
+
+    public function operationalTicket()
+    {
+        return $this->belongsTo(
+            OperationalTicket::class,
+            'operational_ticket_id'
+        );
+    }
+
+    public function dailyReports()
+    {
+        return $this->hasMany(
+            DailyReport::class,
+            'delegation_id'
+        );
     }
 }

@@ -35,6 +35,13 @@
                             {{ optional($report->report_date)->format('d/m/Y') }}
                         </span>
                     </div>
+
+                    @if($report->operationalTicket)
+                        <span class="inline-flex rounded-full border border-amber-300/20 bg-amber-400/15 px-3 py-1 text-xs font-semibold text-amber-100">
+                            Tiket Operasional
+                        </span>
+                    @endif
+
                 </div>
 
                 <a
@@ -44,6 +51,17 @@
                     <x-icon name="arrow-left" class="h-4 w-4" />
                     Kembali ke Monitoring
                 </a>
+
+                @if($report->operationalTicket)
+                    <a
+                        href="{{ route('operations.tickets.show', $report->operationalTicket) }}"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-amber-300/20 bg-amber-400/15 px-3 py-2 text-xs font-semibold text-amber-100 shadow-sm transition hover:bg-amber-400/20"
+                    >
+                        <x-icon name="ticket" class="h-4 w-4" />
+                        Lihat Tiket Sumber
+                    </a>
+                @endif
+
             </div>
         </x-slot:aside>
     </x-page-hero>
@@ -137,6 +155,55 @@
                     <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
                         <x-icon name="users" class="h-5 w-5" />
                     </div>
+
+                    @if($report->operationalTicket)
+                        <x-ui.card>
+                            <div class="mb-5 flex items-start gap-3">
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
+                                    <x-icon name="ticket" class="h-5 w-5" />
+                                </div>
+
+                                <div>
+                                    <h2 class="text-base font-bold text-slate-900">
+                                        Tiket Sumber
+                                    </h2>
+
+                                    <p class="mt-1 text-sm text-slate-500">
+                                        Laporan dibuat dari aktivitas penanganan tiket.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-3">
+                                <div>
+                                    <div class="text-xs font-bold uppercase tracking-wide text-slate-400">
+                                        Kode Tiket
+                                    </div>
+
+                                    <div class="mt-1 text-sm font-bold text-slate-900">
+                                        {{ $report->operationalTicket->ticket_code }}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="text-xs font-bold uppercase tracking-wide text-slate-400">
+                                        Status
+                                    </div>
+
+                                    <div class="mt-1 text-sm text-slate-700">
+                                        {{ $report->operationalTicket->status_label }}
+                                    </div>
+                                </div>
+
+                                <a
+                                    href="{{ route('operations.tickets.show', $report->operationalTicket) }}"
+                                    class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-amber-700"
+                                >
+                                    Buka Tiket
+                                </a>
+                            </div>
+                        </x-ui.card>
+                    @endif
 
                     <div>
                         <h2 class="text-base font-bold text-slate-900">Informasi Pegawai</h2>

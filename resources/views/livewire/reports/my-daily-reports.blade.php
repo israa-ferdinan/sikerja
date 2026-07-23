@@ -78,7 +78,7 @@
                         type="text"
                         wire:model.live.debounce.500ms="search"
                         class="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-700 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                        placeholder="Cari laporan, tupoksi, klasifikasi, server, atau aplikasi..."
+                        placeholder="Cari laporan, kode tiket, tupoksi, klasifikasi, server, atau aplikasi..."
                     >
                 </div>
             </div>
@@ -185,6 +185,13 @@
                                                     </span>
                                                 @endif
 
+                                                @if($report->operationalTicket)
+                                                    <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
+                                                        <x-icon name="ticket" class="h-3.5 w-3.5" />
+                                                        Tiket Operasional
+                                                    </span>
+                                                @endif
+
                                                 @if ($report->application)
                                                     <span class="inline-flex items-center rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 ring-1 ring-violet-200">
                                                         {{ $report->application->name }}
@@ -206,6 +213,30 @@
                                                             {{ $report->dutyOwnerEmployee?->name ?? '-' }}
                                                         </span>
                                                     </div>
+
+                                                    @if($report->operationalTicket)
+                                                        <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+                                                            <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                                                                <div>
+                                                                    <p class="text-xs font-bold uppercase tracking-wide text-amber-700">
+                                                                        Tiket Sumber
+                                                                    </p>
+
+                                                                    <p class="mt-1 text-sm font-semibold text-amber-950">
+                                                                        {{ $report->operationalTicket->ticket_code }}
+                                                                    </p>
+                                                                </div>
+
+                                                                <a
+                                                                    href="{{ route('operations.tickets.show', $report->operationalTicket) }}"
+                                                                    class="inline-flex w-fit items-center gap-1 text-xs font-bold text-amber-700 transition hover:text-amber-900"
+                                                                >
+                                                                    Lihat Tiket
+                                                                    <x-icon name="arrow-up-right" class="h-3.5 w-3.5" />
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    @endif
 
                                                     <div>
                                                         Dilaporkan Oleh:
